@@ -53,7 +53,7 @@ export default function Home() {
         {/* Action Buttons */}
         <div className="mt-10 flex flex-col sm:flex-row gap-4 w-full justify-center">
           <Link
-            href="/user/home"
+            href="/auth/login"
             className="flex h-12 items-center justify-center rounded-xl bg-indigo-600 text-white font-semibold px-6 shadow-sm shadow-indigo-600/10 hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-400 transition-all sm:w-44"
           >
             Access Portal

@@ -1,10 +1,13 @@
 import BeneficiaryStats from "../components/beneficiary-stats";
-import BeneficiaryRecords from "../components/beneficiary-records";
-import { getBeneficiaries } from "./actions";
-import BeneficiaryModal from "../components/beneficiary-modal";
+import { getAssistanceCategories, getBeneficiaries, getBeneficiaryPageCounts } from "./actions";
+import BeneficiaryClient from "../components/beneficiary-client-page";
 
 export default async function Beneficiary() {
   const beneficiaries = await getBeneficiaries();
+
+  const assistanceCategories = await getAssistanceCategories();
+
+  const stats = await getBeneficiaryPageCounts();
 
   return (
     <main className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-10">
@@ -26,13 +29,16 @@ export default async function Beneficiary() {
           </div>
         </section>
 
-        <BeneficiaryStats />
+        <div className="mx-auto flex max-w-7xl flex-col gap-6">
+          {/* header + stats can stay server */}
+          <BeneficiaryStats data={stats}/>
 
-        <div className="flex justify-end">
-          <BeneficiaryModal />
+          {/* 👇 move interactive part here */}
+          <BeneficiaryClient
+            beneficiaries={beneficiaries}
+            assistanceCategories={assistanceCategories}
+          />
         </div>
-
-        <BeneficiaryRecords data={beneficiaries} />
       </div>
     </main>
   );
