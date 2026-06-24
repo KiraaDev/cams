@@ -25,8 +25,16 @@ export default function AdminSidebar({ user }: { user: User }) {
   const pathname = usePathname();
 
   return (
-    <aside className="border-b border-slate-800 bg-slate-950 text-slate-100 lg:min-h-screen lg:w-72 lg:border-b-0 lg:border-r">
-      <div className="flex h-full flex-col p-4 sm:p-5">
+    /* CHANGES MADE HERE:
+      1. Added `lg:sticky lg:top-0 lg:h-screen` to lock it to the viewport height on large screens.
+      2. Replaced `lg:min-h-screen` with `lg:h-screen`.
+    */
+    <aside className="border-b border-slate-800 bg-slate-950 text-slate-100 lg:sticky lg:top-0 lg:h-screen lg:w-72 lg:border-b-0 lg:border-r">
+      {/* CHANGES MADE HERE:
+        1. Added `overflow-y-auto` so if your navigation items ever exceed the screen height, 
+           only the inside of the sidebar scrolls, not the whole layout.
+      */}
+      <div className="flex h-full flex-col p-4 sm:p-5 overflow-y-auto">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-cyan-300">
             CAMS
