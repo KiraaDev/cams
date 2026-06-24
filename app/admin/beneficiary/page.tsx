@@ -1,5 +1,9 @@
 import BeneficiaryStats from "../components/beneficiary-stats";
-import { getAssistanceCategories, getBeneficiaries, getBeneficiaryPageCounts } from "./actions";
+import {
+  getAssistanceCategories,
+  getBeneficiaries,
+  getBeneficiaryPageCounts,
+} from "./actions";
 import BeneficiaryClient from "../components/beneficiary-client-page";
 
 export default async function Beneficiary() {
@@ -31,7 +35,7 @@ export default async function Beneficiary() {
 
         <div className="mx-auto flex max-w-7xl flex-col gap-6">
           {/* header + stats can stay server */}
-          <BeneficiaryStats data={stats}/>
+          <BeneficiaryStats data={stats} />
 
           {/* 👇 move interactive part here */}
           <BeneficiaryClient
