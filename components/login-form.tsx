@@ -44,8 +44,8 @@ export default function LoginForm() {
 
       const role: AppRole = jwt.user_role;
 
-      if (role === "user") {
-        router.replace("/user/home");
+      if (role === "staff") {
+        router.replace("/staff/dashboard");
       } else if (role === "admin") {
         router.replace("/admin/dashboard");
       }
