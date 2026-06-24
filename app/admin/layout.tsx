@@ -37,7 +37,7 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-slate-100 lg:flex">
-      <AdminSidebar />
+      <AdminSidebar  user={session.user}/>
       <div className="min-w-0 flex-1">{children}</div>
     </div>
   );
