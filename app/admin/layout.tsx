@@ -28,8 +28,8 @@ export default async function AdminLayout({
   const role: AppRole | undefined = jwt.user_role;
 
   if (role !== "admin") {
-    if (role === "user") {
-      redirect("/user/home");
+    if (role === "staff") {
+      redirect("/staff/dashboard");
     }
 
     redirect("/auth/login");

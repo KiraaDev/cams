@@ -1,4 +1,4 @@
-export type AppRole = "user" | "admin";
+export type AppRole = "staff" | "admin";
 
 export type CustomJWTPayload = {
   aud: string;
