@@ -26,48 +26,6 @@ type ProgramForm = {
 
 const STATUSES: ProgramStatus[] = ["Active", "Paused", "Archived"];
 
-const SAMPLE_PROGRAMS: ProgramItem[] = [
-  {
-    id: "PRG-1001",
-    name: "Food Subsidy",
-    category: "Basic Needs",
-    description: "Monthly food support for qualified households.",
-    budget: 450000,
-    beneficiaries: 220,
-    status: "Active",
-    createdAt: "2026-03-10",
-  },
-  {
-    id: "PRG-1002",
-    name: "Medical Assistance",
-    category: "Healthcare",
-    description: "Financial aid for hospitalization and medicine.",
-    budget: 600000,
-    beneficiaries: 140,
-    status: "Active",
-    createdAt: "2026-02-05",
-  },
-  {
-    id: "PRG-1003",
-    name: "Education Grant",
-    category: "Education",
-    description: "Tuition and school supply support for students.",
-    budget: 320000,
-    beneficiaries: 95,
-    status: "Paused",
-    createdAt: "2026-01-22",
-  },
-  {
-    id: "PRG-1004",
-    name: "Livelihood Support",
-    category: "Economic",
-    description: "Seed funding and tools for small businesses.",
-    budget: 550000,
-    beneficiaries: 80,
-    status: "Archived",
-    createdAt: "2025-11-15",
-  },
-];
 
 const initialForm: ProgramForm = {
   name: "",
@@ -94,7 +52,7 @@ function buildProgramId(items: ProgramItem[]) {
 }
 
 export default function Programs() {
-  const [programs, setPrograms] = useState<ProgramItem[]>(SAMPLE_PROGRAMS);
+  const [programs, setPrograms] = useState<ProgramItem[]>([]);
   const [form, setForm] = useState<ProgramForm>(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");

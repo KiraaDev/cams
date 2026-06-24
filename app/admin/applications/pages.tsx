@@ -6,8 +6,7 @@ import ApplicationForm from "../components/application-form";
 import ApplicationAddButton from "../components/application-add-button";
 
 import { FormEvent, useMemo, useState } from "react";
-
-type ApplicationStatus = "Pending" | "Approved" | "Rejected" | "Released";
+import { Application, ApplicationStatus } from "@/types/application";
 
 type ApplicationItem = {
   id: string;
@@ -26,52 +25,6 @@ type FormState = {
   amount: string;
   status: ApplicationStatus;
 };
-
-const STATUSES: ApplicationStatus[] = [
-  "Pending",
-  "Approved",
-  "Rejected",
-  "Released",
-];
-
-const SAMPLE_APPLICATIONS: ApplicationItem[] = [
-  {
-    id: "APP-3001",
-    beneficiaryName: "Maria Santos",
-    beneficiaryId: "BEN-201",
-    program: "Food Subsidy",
-    amount: 5000,
-    status: "Pending",
-    submittedAt: "2026-06-02",
-  },
-  {
-    id: "APP-3002",
-    beneficiaryName: "Rico Flores",
-    beneficiaryId: "BEN-206",
-    program: "Livelihood Support",
-    amount: 18000,
-    status: "Approved",
-    submittedAt: "2026-06-04",
-  },
-  {
-    id: "APP-3003",
-    beneficiaryName: "Ana Villanueva",
-    beneficiaryId: "BEN-205",
-    program: "Education Grant",
-    amount: 9500,
-    status: "Released",
-    submittedAt: "2026-06-10",
-  },
-  {
-    id: "APP-3004",
-    beneficiaryName: "Noel Garcia",
-    beneficiaryId: "BEN-204",
-    program: "Medical Assistance",
-    amount: 11000,
-    status: "Rejected",
-    submittedAt: "2026-06-13",
-  },
-];
 
 const initialForm: FormState = {
   beneficiaryName: "",
@@ -96,9 +49,12 @@ function buildApplicationId(existing: ApplicationItem[]) {
   return `APP-${String(maxId + 1)}`;
 }
 
-export default function Application() {
-  const [applications, setApplications] =
-    useState<ApplicationItem[]>(SAMPLE_APPLICATIONS);
+type ApplicationProps = {
+  data: Application[];
+};
+
+export default function ApplicationPage({ data }: ApplicationProps) {
+  const [applications, setApplications] = useState<ApplicationItem[]>([]);
   const [form, setForm] = useState<FormState>(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
@@ -107,37 +63,6 @@ export default function Application() {
   );
 
   const [isOpen, setIsOpen] = useState(false);
-
-  const dashboardStats = useMemo(() => {
-    return {
-      total: applications.length,
-      pending: applications.filter((item) => item.status === "Pending").length,
-      approved: applications.filter((item) => item.status === "Approved")
-        .length,
-      rejected: applications.filter((item) => item.status === "Rejected")
-        .length,
-      released: applications.filter((item) => item.status === "Released")
-        .length,
-    };
-  }, [applications]);
-
-  const filteredApplications = useMemo(() => {
-    const keyword = searchText.trim().toLowerCase();
-
-    return applications.filter((item) => {
-      const matchesKeyword =
-        keyword.length === 0 ||
-        item.id.toLowerCase().includes(keyword) ||
-        item.beneficiaryName.toLowerCase().includes(keyword) ||
-        item.beneficiaryId.toLowerCase().includes(keyword) ||
-        item.program.toLowerCase().includes(keyword);
-
-      const matchesStatus =
-        statusFilter === "All" || item.status === statusFilter;
-
-      return matchesKeyword && matchesStatus;
-    });
-  }, [applications, searchText, statusFilter]);
 
   function resetForm() {
     setForm(initialForm);
@@ -246,7 +171,7 @@ export default function Application() {
           <ApplicationForm isOpen={isOpen} setIsOpen={setIsOpen} />
           <article className="rounded-2xl border border-slate-200 bg-white w-full p-5 shadow-sm sm:p-6">
             {/* application-table */}
-            <ApplicationTable />
+            <ApplicationTable data={data} />
           </article>
         </section>
       </div>

@@ -1,5 +1,13 @@
+import { getPrograms } from "./action";
 import Programs from "./pages";
 
-export default function ProgramPage() {
-  return <Programs />;
+export default async function ProgramPage() {
+
+  const programs = await getPrograms();
+  
+  return (
+    <>
+    <Programs />
+    </>
+  );
 }
