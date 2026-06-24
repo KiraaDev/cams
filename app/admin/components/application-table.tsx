@@ -57,6 +57,7 @@ export default function ApplicationTable({
       const matchesKeyword =
         keyword.length === 0 ||
         String(item.id).includes(keyword) ||
+        String(item.beneficiary?.full_name ?? "").toLowerCase().includes(keyword) ||
         String(item.beneficiary_id).includes(keyword) ||
         String(item.program_id).includes(keyword) ||
         item.status.toLowerCase().includes(keyword) ||
@@ -79,7 +80,7 @@ export default function ApplicationTable({
             Application Records
           </h2>
           <p className="text-sm text-slate-600">
-            Loaded from getApplications and matched to your database schema.
+            {applications.length} total application records
           </p>
         </div>
 

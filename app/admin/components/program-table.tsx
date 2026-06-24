@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useMemo, useState } from "react";
 
 import { Program } from "@/types/program";
 
@@ -8,6 +10,8 @@ interface ProgramTableProps {
   onDelete: (program: Program) => void;
 }
 
+type ProgramStatusFilter = "All" | "Active" | "Inactive";
+
 const money = new Intl.NumberFormat("en-PH", {
   style: "currency",
   currency: "PHP",
@@ -15,8 +19,73 @@ const money = new Intl.NumberFormat("en-PH", {
 });
 
 function ProgramTable({ programs, onEdit, onDelete }: ProgramTableProps) {
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ProgramStatusFilter>("All");
+
+  const filteredPrograms = useMemo(() => {
+    const keyword = searchText.trim().toLowerCase();
+
+    return programs.filter((item) => {
+      const matchesKeyword =
+        keyword.length === 0 ||
+        String(item.id).includes(keyword) ||
+        String(item.program_name ?? "")
+          .toLowerCase()
+          .includes(keyword) ||
+        String(item.program_code ?? "")
+          .toLowerCase()
+          .includes(keyword) ||
+        String(item.description ?? "")
+          .toLowerCase()
+          .includes(keyword) ||
+        String(item.budget ?? "")
+          .toLowerCase()
+          .includes(keyword) ||
+        String(item.created_at ?? "")
+          .toLowerCase()
+          .includes(keyword);
+
+      const matchesStatus =
+        statusFilter === "All" ||
+        (statusFilter === "Active" && Boolean(item.is_active)) ||
+        (statusFilter === "Inactive" && !Boolean(item.is_active));
+
+      return matchesKeyword && matchesStatus;
+    });
+  }, [programs, searchText, statusFilter]);
+
   return (
     <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
+      <div className="p-4">
+        <h2 className="text-lg font-semibold text-slate-900">
+          Program Records
+        </h2>
+        <p className="text-sm text-slate-600">
+          {programs.length} total program records
+        </p>
+      </div>
+      <div className="flex flex-col gap-2 border-b border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+        <input
+          type="text"
+          value={searchText}
+          onChange={(event) => setSearchText(event.target.value)}
+          placeholder="Search by id, name, code, description, budget"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 sm:w-80"
+        />
+
+        <select
+          value={statusFilter}
+          onChange={(event) =>
+            setStatusFilter(event.target.value as ProgramStatusFilter)
+          }
+          className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+        >
+          <option value="All">All Statuses</option>
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+      </div>
+
       <table className="min-w-full divide-y divide-slate-200 text-sm">
         <thead className="bg-slate-100 text-left text-slate-700">
           <tr>
@@ -30,7 +99,7 @@ function ProgramTable({ programs, onEdit, onDelete }: ProgramTableProps) {
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 bg-white text-slate-700">
-          {programs.map((item) => (
+          {filteredPrograms.map((item) => (
             <tr key={item.id}>
               <td className="px-4 py-3">
                 <p className="font-medium text-slate-900">
@@ -85,9 +154,9 @@ function ProgramTable({ programs, onEdit, onDelete }: ProgramTableProps) {
         </tbody>
       </table>
 
-      {programs.length === 0 && (
+      {filteredPrograms.length === 0 && (
         <div className="px-4 py-8 text-center text-sm text-slate-500">
-          No program records found.
+          No program records match your search/filter.
         </div>
       )}
     </div>
