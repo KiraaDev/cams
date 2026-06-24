@@ -5,7 +5,7 @@ import { Beneficiary } from "@/types/beneficiary";
 type BeneficiaryRecordsProps = {
   data: Beneficiary[];
   onEdit?: (beneficiary: Beneficiary) => void;
-  onDelete?: (id: string) => void;
+  onDelete: (beneficiary: Beneficiary) => void;
 };
 
 export default function BeneficiaryRecords({ 
@@ -80,9 +80,7 @@ export default function BeneficiaryRecords({
                         Edit
                       </button>
                       <button
-                        onClick={() => {
-                        
-                        }}
+                        onClick={() => onDelete?.(b)}
                         className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50 active:bg-rose-100 transition-colors"
                       >
                         Delete

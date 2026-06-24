@@ -4,18 +4,31 @@ import { useState } from "react";
 import BeneficiaryRecords from "../components/beneficiary-records";
 import BeneficiaryModal from "../components/beneficiary-modal";
 import EditBeneficiaryModal from "./edit-beneficiary-modal";
+import DeleteBeneficiaryModal from "./delete-beneficiary-modal";
+import { deleteBeneficiary } from "../beneficiary/actions"; // Assuming this exists
 
 export default function BeneficiaryClient({
   beneficiaries,
   assistanceCategories,
 }: any) {
   const [selected, setSelected] = useState<any | null>(null);
-  const [open, setOpen] = useState(false);
+  
+  // Track which variant modal type is open
+  const [modalType, setModalType] = useState<"edit" | "delete" | null>(null);
 
   const handleEdit = (b: any) => {
     setSelected(b);
-    
-    setOpen(true);
+    setModalType("edit");
+  };
+
+  const handleDeleteTrigger = (b: any) => {
+    setSelected(b);
+    setModalType("delete");
+  };
+
+  const closeModal = () => {
+    setSelected(null);
+    setModalType(null);
   };
 
   return (
@@ -24,16 +37,27 @@ export default function BeneficiaryClient({
         <BeneficiaryModal assistanceCategories={assistanceCategories} />
       </div>
 
-      <BeneficiaryRecords data={beneficiaries} onEdit={handleEdit} />
+      {/* Make sure to pass onDeleteTrigger down if your list handles it */}
+      <BeneficiaryRecords 
+        data={beneficiaries} 
+        onEdit={handleEdit} 
+        onDelete={handleDeleteTrigger} 
+      />
 
-      {open && selected && (
+      {/* EDIT MODAL */}
+      {modalType === "edit" && selected && (
         <EditBeneficiaryModal
           beneficiary={selected}
           assistanceCategories={assistanceCategories}
-          onClose={() => {
-            setOpen(false);
-            setSelected(null);
-          }}
+          onClose={closeModal}
+        />
+      )}
+
+      {/* DELETE MODAL */}
+      {modalType === "delete" && selected && (
+        <DeleteBeneficiaryModal
+          beneficiary={selected}
+          onClose={closeModal}
         />
       )}
     </>
