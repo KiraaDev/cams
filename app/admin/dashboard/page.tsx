@@ -98,12 +98,16 @@ const currency = new Intl.NumberFormat("en-PH", {
 
 export default function AdminDashboard() {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "All">("All");
+  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "All">(
+    "All",
+  );
   const [programFilter, setProgramFilter] = useState<string>("All");
   const [showReport, setShowReport] = useState(false);
 
   const programs = useMemo(() => {
-    return Array.from(new Set(APPLICATIONS.map((record) => record.program))).sort();
+    return Array.from(
+      new Set(APPLICATIONS.map((record) => record.program)),
+    ).sort();
   }, []);
 
   const statuses: Array<ApplicationStatus | "All"> = [
@@ -125,23 +129,28 @@ export default function AdminDashboard() {
         record.beneficiaryName.toLowerCase().includes(keyword) ||
         record.program.toLowerCase().includes(keyword);
 
-      const matchesStatus = statusFilter === "All" || record.status === statusFilter;
-      const matchesProgram = programFilter === "All" || record.program === programFilter;
+      const matchesStatus =
+        statusFilter === "All" || record.status === statusFilter;
+      const matchesProgram =
+        programFilter === "All" || record.program === programFilter;
 
       return matchesSearch && matchesStatus && matchesProgram;
     });
   }, [search, statusFilter, programFilter]);
 
   const dashboardStats = useMemo(() => {
-    const totalBeneficiaries = new Set(APPLICATIONS.map((record) => record.beneficiaryId)).size;
-    const totalPrograms = new Set(APPLICATIONS.map((record) => record.program)).size;
+    const totalBeneficiaries = new Set(
+      APPLICATIONS.map((record) => record.beneficiaryId),
+    ).size;
+    const totalPrograms = new Set(APPLICATIONS.map((record) => record.program))
+      .size;
     const totalApplications = APPLICATIONS.length;
     const approvedApplications = APPLICATIONS.filter(
-      (record) => record.status === "Approved" || record.status === "Released"
+      (record) => record.status === "Approved" || record.status === "Released",
     ).length;
     const releasedAssistance = APPLICATIONS.reduce(
       (total, record) => total + record.releasedAmount,
-      0
+      0,
     );
 
     return {
@@ -158,15 +167,24 @@ export default function AdminDashboard() {
       .filter((status) => status !== "All")
       .map((status) => ({
         status,
-        count: filteredRecords.filter((record) => record.status === status).length,
+        count: filteredRecords.filter((record) => record.status === status)
+          .length,
       }));
   }, [filteredRecords]);
 
   const programUtilization = useMemo(() => {
     return programs.map((program) => {
-      const items = filteredRecords.filter((record) => record.program === program);
-      const totalRequested = items.reduce((sum, record) => sum + record.requestedAmount, 0);
-      const totalReleased = items.reduce((sum, record) => sum + record.releasedAmount, 0);
+      const items = filteredRecords.filter(
+        (record) => record.program === program,
+      );
+      const totalRequested = items.reduce(
+        (sum, record) => sum + record.requestedAmount,
+        0,
+      );
+      const totalReleased = items.reduce(
+        (sum, record) => sum + record.releasedAmount,
+        0,
+      );
 
       return {
         program,
@@ -212,11 +230,15 @@ export default function AdminDashboard() {
           <div className="bg-linear-to-r from-slate-900 via-slate-800 to-cyan-800 px-6 py-8 text-white sm:px-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-cyan-200">Admin Dashboard</p>
-                <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">CAMS Assistance Overview</h1>
+                <p className="text-xs uppercase tracking-[0.3em] text-cyan-200">
+                  Admin Dashboard
+                </p>
+                <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">
+                  CAMS Assistance Overview
+                </h1>
                 <p className="mt-2 max-w-2xl text-sm text-slate-200 sm:text-base">
-                  Monitor applications, track disbursements, and generate summary reports for
-                  beneficiaries and programs.
+                  Monitor applications, track disbursements, and generate
+                  summary reports for beneficiaries and programs.
                 </p>
               </div>
               <SignOutButton />
@@ -231,7 +253,9 @@ export default function AdminDashboard() {
               className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
             >
               <p className="text-sm text-slate-500">{card.label}</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-900">{card.value}</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900">
+                {card.value}
+              </p>
               <span
                 className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${card.accent}`}
               >
@@ -244,7 +268,10 @@ export default function AdminDashboard() {
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
             <div className="flex-1">
-              <label htmlFor="search" className="mb-2 block text-sm font-medium text-slate-700">
+              <label
+                htmlFor="search"
+                className="mb-2 block text-sm font-medium text-slate-700"
+              >
                 Search records
               </label>
               <input
@@ -258,14 +285,19 @@ export default function AdminDashboard() {
             </div>
 
             <div className="w-full lg:w-56">
-              <label htmlFor="statusFilter" className="mb-2 block text-sm font-medium text-slate-700">
+              <label
+                htmlFor="statusFilter"
+                className="mb-2 block text-sm font-medium text-slate-700"
+              >
                 Filter by status
               </label>
               <select
                 id="statusFilter"
                 value={statusFilter}
                 onChange={(event) =>
-                  setStatusFilter(event.target.value as ApplicationStatus | "All")
+                  setStatusFilter(
+                    event.target.value as ApplicationStatus | "All",
+                  )
                 }
                 className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-cyan-400 transition focus:border-cyan-500 focus:ring"
               >
@@ -278,7 +310,10 @@ export default function AdminDashboard() {
             </div>
 
             <div className="w-full lg:w-64">
-              <label htmlFor="programFilter" className="mb-2 block text-sm font-medium text-slate-700">
+              <label
+                htmlFor="programFilter"
+                className="mb-2 block text-sm font-medium text-slate-700"
+              >
                 Filter by program
               </label>
               <select
@@ -298,7 +333,8 @@ export default function AdminDashboard() {
           </div>
 
           <div className="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            Showing {filteredRecords.length} of {APPLICATIONS.length} application records.
+            Showing {filteredRecords.length} of {APPLICATIONS.length}{" "}
+            application records.
           </div>
 
           <div className="mt-5 overflow-x-auto rounded-xl border border-slate-200">
@@ -317,10 +353,16 @@ export default function AdminDashboard() {
               <tbody className="divide-y divide-slate-100 bg-white text-slate-700">
                 {filteredRecords.map((record) => (
                   <tr key={record.applicationId}>
-                    <td className="px-4 py-3 font-medium text-slate-900">{record.applicationId}</td>
+                    <td className="px-4 py-3 font-medium text-slate-900">
+                      {record.applicationId}
+                    </td>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-slate-900">{record.beneficiaryName}</p>
-                      <p className="text-xs text-slate-500">{record.beneficiaryId}</p>
+                      <p className="font-medium text-slate-900">
+                        {record.beneficiaryName}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {record.beneficiaryId}
+                      </p>
                     </td>
                     <td className="px-4 py-3">{record.program}</td>
                     <td className="px-4 py-3">
@@ -338,8 +380,12 @@ export default function AdminDashboard() {
                         {record.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3">{currency.format(record.requestedAmount)}</td>
-                    <td className="px-4 py-3">{currency.format(record.releasedAmount)}</td>
+                    <td className="px-4 py-3">
+                      {currency.format(record.requestedAmount)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {currency.format(record.releasedAmount)}
+                    </td>
                     <td className="px-4 py-3">{record.submittedAt}</td>
                   </tr>
                 ))}
@@ -358,8 +404,8 @@ export default function AdminDashboard() {
             <div>
               <h2 className="text-lg font-semibold text-slate-900">Reports</h2>
               <p className="text-sm text-slate-600">
-                Generate a report with beneficiary records, application status summary, and program
-                utilization summary.
+                Generate a report with beneficiary records, application status
+                summary, and program utilization summary.
               </p>
             </div>
             <button
@@ -374,20 +420,31 @@ export default function AdminDashboard() {
           {showReport && (
             <div className="mt-5 grid gap-4 lg:grid-cols-3">
               <article className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <h3 className="text-sm font-semibold text-slate-900">Beneficiary Records</h3>
+                <h3 className="text-sm font-semibold text-slate-900">
+                  Beneficiary Records
+                </h3>
                 <p className="mt-1 text-xs text-slate-600">
                   Distinct beneficiaries in the current filtered result.
                 </p>
                 <p className="mt-3 text-2xl font-semibold text-slate-900">
-                  {new Set(filteredRecords.map((record) => record.beneficiaryId)).size}
+                  {
+                    new Set(
+                      filteredRecords.map((record) => record.beneficiaryId),
+                    ).size
+                  }
                 </p>
               </article>
 
               <article className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <h3 className="text-sm font-semibold text-slate-900">Application Status Summary</h3>
+                <h3 className="text-sm font-semibold text-slate-900">
+                  Application Status Summary
+                </h3>
                 <ul className="mt-3 space-y-2 text-sm text-slate-700">
                   {statusSummary.map((item) => (
-                    <li key={item.status} className="flex items-center justify-between">
+                    <li
+                      key={item.status}
+                      className="flex items-center justify-between"
+                    >
                       <span>{item.status}</span>
                       <span className="font-semibold">{item.count}</span>
                     </li>
@@ -396,14 +453,19 @@ export default function AdminDashboard() {
               </article>
 
               <article className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <h3 className="text-sm font-semibold text-slate-900">Program Utilization Summary</h3>
+                <h3 className="text-sm font-semibold text-slate-900">
+                  Program Utilization Summary
+                </h3>
                 <ul className="mt-3 space-y-2 text-sm text-slate-700">
                   {programUtilization.map((item) => (
                     <li key={item.program}>
-                      <p className="font-medium text-slate-900">{item.program}</p>
+                      <p className="font-medium text-slate-900">
+                        {item.program}
+                      </p>
                       <p className="text-xs text-slate-600">
-                        {item.applications} apps • Requested {currency.format(item.totalRequested)} •
-                        Released {currency.format(item.totalReleased)}
+                        {item.applications} apps • Requested{" "}
+                        {currency.format(item.totalRequested)} • Released{" "}
+                        {currency.format(item.totalReleased)}
                       </p>
                     </li>
                   ))}
