@@ -2,26 +2,33 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
-import { jwtDecode } from "jwt-decode";
-import { AppRole, CustomJWTPayload } from "@/types/user";
+import Link from "next/link";
 
-export default function LoginForm() {
+export default function RegisterForm() {
   const supabase = createClient();
-  const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
     setLoading(true);
     setError("");
+    setSuccess("");
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
+    const { error } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -32,23 +39,14 @@ export default function LoginForm() {
       return;
     }
 
-    if (data.session) {
-      const jwt = jwtDecode<CustomJWTPayload>(data.session.access_token);
+    setSuccess(
+      "Account created successfully. Check your email for verification."
+    );
 
-      if (!jwt.user_role) {
-        setError("User Role Error");
-        setLoading(false);
-        return;
-      }
-
-      const role: AppRole = jwt.user_role;
-
-      if (role === "user") {
-        router.replace("/user/home");
-      } else if (role === "admin") {
-        router.replace("/admin/dashboard");
-      }
-    }
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setLoading(false);
   };
 
   return (
@@ -57,17 +55,23 @@ export default function LoginForm() {
         <div className="rounded-2xl border bg-background p-8 shadow-sm">
           <div className="mb-8 space-y-2 text-center">
             <h1 className="text-3xl font-bold tracking-tight">
-              Welcome Back
+              Create Account
             </h1>
             <p className="text-sm text-muted-foreground">
-              Sign in to continue to your account
+              Register to access the system
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleRegister} className="space-y-5">
             {error && (
               <div className="rounded-lg border p-3 text-sm">
                 {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="rounded-lg border p-3 text-sm">
+                {success}
               </div>
             )}
 
@@ -92,30 +96,42 @@ export default function LoginForm() {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="password"
-                  className="text-sm font-medium"
-                >
-                  Password
-                </label>
-
-                <button
-                  type="button"
-                  className="text-sm hover:underline"
-                >
-                  Forgot Password?
-                </button>
-              </div>
+              <label
+                htmlFor="password"
+                className="text-sm font-medium"
+              >
+                Password
+              </label>
 
               <input
                 id="password"
                 type="password"
                 required
-                autoComplete="current-password"
+                minLength={6}
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                placeholder="Create a password"
+                className="w-full rounded-xl border px-4 py-3 outline-none transition focus:ring-2"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label
+                htmlFor="confirmPassword"
+                className="text-sm font-medium"
+              >
+                Confirm Password
+              </label>
+
+              <input
+                id="confirmPassword"
+                type="password"
+                required
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm your password"
                 className="w-full rounded-xl border px-4 py-3 outline-none transition focus:ring-2"
               />
             </div>
@@ -125,8 +141,18 @@ export default function LoginForm() {
               disabled={loading}
               className="w-full rounded-xl border px-4 py-3 font-medium transition hover:shadow-sm disabled:pointer-events-none disabled:opacity-50"
             >
-              {loading ? "Signing In..." : "Sign In"}
+              {loading ? "Creating Account..." : "Create Account"}
             </button>
+
+            <div className="text-center text-sm text-muted-foreground">
+              Already have an account?{" "}
+              <Link
+                href="/auth/login"
+                className="font-medium underline-offset-4 hover:underline"
+              >
+                Sign In
+              </Link>
+            </div>
           </form>
         </div>
       </div>
