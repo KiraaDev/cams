@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { jwtDecode } from "jwt-decode";
 import { CustomJWTPayload } from "@/types/user";
 
-export default async function UserLayout({
+export default async function StaffLayout({
   children,
 }: {
   children: ReactNode;
@@ -27,7 +27,7 @@ export default async function UserLayout({
 
   const role = jwt.user_role;
 
-  if (role !== "user") {
+  if (role !== "staff") {
     if (role === "admin") {
       redirect("/admin/dashboard");
     }

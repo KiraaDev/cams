@@ -3,8 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { jwtDecode } from "jwt-decode";
-
-type AppRole = "user" | "admin";
+import { AppRole } from "@/types/user";
 
 type CustomJWTPayload = {
   user_role?: AppRole;
@@ -25,8 +24,8 @@ export default async function LoginPage() {
 
     const role = jwt.user_role;
 
-    if (role === "user") {
-      redirect("/user/home");
+    if (role === "staff") {
+      redirect("/staff/dashboard");
     }
 
     if (role === "admin") {
