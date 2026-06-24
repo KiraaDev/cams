@@ -7,7 +7,6 @@ export type Beneficiary = {
   created_by_user_id: string;
   created_at: string | null; 
   updated_at: string | null; 
-
 }
 
 export type CreateBeneficiary = {
