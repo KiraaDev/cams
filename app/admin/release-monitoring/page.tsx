@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import { useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { FormEvent, useMemo, useState, useEffect } from "react";
 
 type Province = {
   code: string;
@@ -18,128 +18,49 @@ type Barangay = {
   name: string;
 };
 
-type AssistanceType =
-  | "Cash Assistance"
-  | "Food Pack"
-  | "Medical Support"
-  | "Education Grant"
-  | "Livelihood Kit";
-
-type ReleaseRecord = {
-  id: string;
-  dateReleased: string;
-  assistanceType: AssistanceType;
-  beneficiaryName: string;
-  beneficiaryId: string;
-
-  beneficiaryProvince: string;
-  beneficiaryMunicipality: string;
-  beneficiaryBarangay: string;
-
-  // PSGC codes stored so edit can restore the cascading dropdowns
-  beneficiaryProvinceCode: string;
-  beneficiaryMunicipalityCode: string;
-
-  releasingOfficer: string;
-  amount: number;
+// Hardcoded array mapping category IDs to names based on your assistance_categories lookup structure
+type AssistanceCategory = {
+  id: number;
+  name: string;
 };
 
-type ReleaseForm = {
-  dateReleased: string;
-  assistanceType: AssistanceType;
-  beneficiaryName: string;
-  beneficiaryId: string;
-
-  beneficiaryProvince: string;
-  beneficiaryMunicipality: string;
-  beneficiaryBarangay: string;
-
-  releasingOfficer: string;
-  amount: string;
-};
-
-const ASSISTANCE_TYPES: AssistanceType[] = [
-  "Cash Assistance",
-  "Food Pack",
-  "Medical Support",
-  "Education Grant",
-  "Livelihood Kit",
+const ASSISTANCE_CATEGORIES: AssistanceCategory[] = [
+  { id: 1, name: "Cash Assistance" },
+  { id: 2, name: "Food Pack" },
+  { id: 3, name: "Medical Support" },
+  { id: 4, name: "Education Grant" },
+  { id: 5, name: "Livelihood Kit" },
 ];
 
-// PSGC codes: Bulacan → 030800000 | Malolos City → 031404000
-const SAMPLE_RELEASES: ReleaseRecord[] = [
-  {
-    id: "REL-5001",
-    dateReleased: "2026-06-07",
-    assistanceType: "Cash Assistance",
-    beneficiaryName: "Maria Santos",
-    beneficiaryId: "BEN-201",
-    beneficiaryProvince: "Bulacan",
-    beneficiaryMunicipality: "Malolos City",
-    beneficiaryBarangay: "Barangay San Isidro",
-    beneficiaryProvinceCode: "030800000",
-    beneficiaryMunicipalityCode: "031404000",
-    releasingOfficer: "Officer Ramon Dela Peña",
-    amount: 5000,
-  },
-  {
-    id: "REL-5002",
-    dateReleased: "2026-06-11",
-    assistanceType: "Medical Support",
-    beneficiaryName: "John Dela Cruz",
-    beneficiaryId: "BEN-202",
-    beneficiaryProvince: "Bulacan",
-    beneficiaryMunicipality: "Malolos City",
-    beneficiaryBarangay: "Barangay Mabini",
-    beneficiaryProvinceCode: "030800000",
-    beneficiaryMunicipalityCode: "031404000",
-    releasingOfficer: "Officer Carla Reyes",
-    amount: 12000,
-  },
-  {
-    id: "REL-5003",
-    dateReleased: "2026-06-15",
-    assistanceType: "Food Pack",
-    beneficiaryName: "Liza Ramos",
-    beneficiaryId: "BEN-203",
-    beneficiaryProvince: "Bulacan",
-    beneficiaryMunicipality: "Malolos City",
-    beneficiaryBarangay: "Barangay Sto. Nino",
-    beneficiaryProvinceCode: "030800000",
-    beneficiaryMunicipalityCode: "031404000",
-    releasingOfficer: "Officer Carlo Mendoza",
-    amount: 2500,
-  },
-];
-
-const initialForm: ReleaseForm = {
-  dateReleased: "",
-  assistanceType: "Cash Assistance",
-  beneficiaryName: "",
-  beneficiaryId: "",
-
-  beneficiaryProvince: "",
-  beneficiaryMunicipality: "",
-  beneficiaryBarangay: "",
-
-  releasingOfficer: "",
-  amount: "",
+type BeneficiaryRecord = {
+  id: number; // bigserial from database
+  full_name: string;
+  address: string;
+  contact_number: string;
+  assistance_category_id: number;
+  created_by_user_id: string;
+  created_at: string;
 };
 
-const money = new Intl.NumberFormat("en-PH", {
-  style: "currency",
-  currency: "PHP",
-  maximumFractionDigits: 0,
-});
+type BeneficiaryForm = {
+  full_name: string;
+  contact_number: string;
+  assistance_category_id: number;
+  
+  // Local states for structural cascading address composition
+  provinceName: string;
+  municipalityName: string;
+  barangayName: string;
+};
 
-function buildReleaseId(entries: ReleaseRecord[]) {
-  const maxId = entries.reduce((max, item) => {
-    const numeric = Number(item.id.replace("REL-", ""));
-    return Number.isNaN(numeric) ? max : Math.max(max, numeric);
-  }, 5000);
-
-  return `REL-${String(maxId + 1)}`;
-}
+const initialForm: BeneficiaryForm = {
+  full_name: "",
+  contact_number: "",
+  assistance_category_id: 1,
+  provinceName: "",
+  municipalityName: "",
+  barangayName: "",
+};
 
 export default function ReleaseMonitoring() {
   const [provinces, setProvinces] = useState<Province[]>([]);
@@ -149,7 +70,6 @@ export default function ReleaseMonitoring() {
   const [provinceCode, setProvinceCode] = useState("");
   const [municipalityCode, setMunicipalityCode] = useState("");
 
-  // Loading / error states for each PSGC level
   const [provincesLoading, setProvincesLoading] = useState(false);
   const [provincesError, setProvincesError] = useState(false);
   const [municipalitiesLoading, setMunicipalitiesLoading] = useState(false);
@@ -157,85 +77,69 @@ export default function ReleaseMonitoring() {
   const [barangaysLoading, setBarangaysLoading] = useState(false);
   const [barangaysError, setBarangaysError] = useState(false);
 
+  // Database State Streams
+  const [records, setRecords] = useState<BeneficiaryRecord[]>([]);
+  const [form, setForm] = useState<BeneficiaryForm>(initialForm);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [searchText, setSearchText] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<number | "All">("All");
+
+  // Fetch from the public.beneficiaries table directly
+  const fetchRecords = async () => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("beneficiaries")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+      console.log(data)
+
+    if (error) {
+      console.error("Error fetching beneficiaries rows:", error);
+      return;
+    }
+    if (data) setRecords(data);
+  };
+
+  useEffect(() => {
+    fetchRecords();
+  }, []);
+
+  // PSGC Side-Effect Handling
   useEffect(() => {
     setProvincesLoading(true);
-    setProvincesError(false);
     fetch("https://psgc.gitlab.io/api/provinces/")
-      .then((res) => {
-        if (!res.ok) throw new Error();
-        return res.json();
-      })
-      .then((data) =>
-        setProvinces(
-          data.sort((a: Province, b: Province) =>
-            a.name.localeCompare(b.name)
-          )
-        )
-      )
+      .then((res) => res.json())
+      .then((data) => setProvinces(data.sort((a: Province, b: Province) => a.name.localeCompare(b.name))))
       .catch(() => setProvincesError(true))
       .finally(() => setProvincesLoading(false));
   }, []);
 
   useEffect(() => {
     if (!provinceCode) return;
-
     setMunicipalitiesLoading(true);
-    setMunicipalitiesError(false);
-    fetch(
-      `https://psgc.gitlab.io/api/provinces/${provinceCode}/cities-municipalities/`
-    )
-      .then((res) => {
-        if (!res.ok) throw new Error();
-        return res.json();
-      })
-      .then((data) =>
-        setMunicipalities(
-          data.sort((a: CityMunicipality, b: CityMunicipality) =>
-            a.name.localeCompare(b.name)
-          )
-        )
-      )
+    fetch(`https://psgc.gitlab.io/api/provinces/${provinceCode}/cities-municipalities/`)
+      .then((res) => res.json())
+      .then((data) => setMunicipalities(data.sort((a: CityMunicipality, b: CityMunicipality) => a.name.localeCompare(b.name))))
       .catch(() => setMunicipalitiesError(true))
       .finally(() => setMunicipalitiesLoading(false));
   }, [provinceCode]);
 
   useEffect(() => {
     if (!municipalityCode) return;
-
     setBarangaysLoading(true);
-    setBarangaysError(false);
-    fetch(
-      `https://psgc.gitlab.io/api/cities-municipalities/${municipalityCode}/barangays/`
-    )
-      .then((res) => {
-        if (!res.ok) throw new Error();
-        return res.json();
-      })
-      .then((data) =>
-        setBarangays(
-          data.sort((a: Barangay, b: Barangay) =>
-            a.name.localeCompare(b.name)
-          )
-        )
-      )
+    fetch(`https://psgc.gitlab.io/api/cities-municipalities/${municipalityCode}/barangays/`)
+      .then((res) => res.json())
+      .then((data) => setBarangays(data.sort((a: Barangay, b: Barangay) => a.name.localeCompare(b.name))))
       .catch(() => setBarangaysError(true))
       .finally(() => setBarangaysLoading(false));
   }, [municipalityCode]);
 
-  const [records, setRecords] = useState<ReleaseRecord[]>(SAMPLE_RELEASES);
-  const [form, setForm] = useState<ReleaseForm>(initialForm);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [searchText, setSearchText] = useState("");
-  const [assistanceFilter, setAssistanceFilter] = useState<
-    AssistanceType | "All"
-  >("All");
-
+  // Client Summaries calculated on the current dataset
   const summary = useMemo(() => {
     return {
-      totalReleases: records.length,
-      totalAmount: records.reduce((sum, item) => sum + item.amount, 0),
-      officers: new Set(records.map((item) => item.releasingOfficer)).size,
-      beneficiaries: new Set(records.map((item) => item.beneficiaryId)).size,
+      totalBeneficiaries: records.length,
+      distinctCategories: new Set(records.map((item) => item.assistance_category_id)).size,
     };
   }, [records]);
 
@@ -245,121 +149,122 @@ export default function ReleaseMonitoring() {
     return records.filter((record) => {
       const matchesKeyword =
         keyword.length === 0 ||
-        record.id.toLowerCase().includes(keyword) ||
-        record.beneficiaryName.toLowerCase().includes(keyword) ||
-        record.beneficiaryId.toLowerCase().includes(keyword) ||
-        record.releasingOfficer.toLowerCase().includes(keyword) ||
-        record.beneficiaryBarangay.toLowerCase().includes(keyword) ||
-        record.beneficiaryMunicipality.toLowerCase().includes(keyword) ||
-        record.beneficiaryProvince.toLowerCase().includes(keyword);
+        String(record.id).includes(keyword) ||
+        record.full_name.toLowerCase().includes(keyword) ||
+        record.address.toLowerCase().includes(keyword) ||
+        (record.contact_number && record.contact_number.includes(keyword));
 
-      const matchesAssistance =
-        assistanceFilter === "All" ||
-        record.assistanceType === assistanceFilter;
+      const matchesCategory =
+        categoryFilter === "All" || record.assistance_category_id === categoryFilter;
 
-      return matchesKeyword && matchesAssistance;
+      return matchesKeyword && matchesCategory;
     });
-  }, [records, searchText, assistanceFilter]);
+  }, [records, searchText, categoryFilter]);
 
   function resetForm() {
     setForm(initialForm);
     setEditingId(null);
-
     setProvinceCode("");
     setMunicipalityCode("");
-
     setMunicipalities([]);
     setBarangays([]);
   }
 
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
+  // Persisting data with Supabase targeting public.beneficiaries table schema
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const supabase = createClient();
 
-    const amountNumber = Number(form.amount);
-    if (
-      !form.dateReleased ||
-      !form.beneficiaryName ||
-      !form.beneficiaryId ||
-      !form.beneficiaryProvince ||
-      !form.beneficiaryMunicipality ||
-      !form.beneficiaryBarangay ||
-      !form.releasingOfficer
-    ) {
-      return;
-    }
+    // Reconstruct compound address text string format
+    const fullAddress = [form.barangayName, form.municipalityName, form.provinceName]
+      .filter(Boolean)
+      .join(", ");
 
-    if (Number.isNaN(amountNumber) || amountNumber <= 0) {
+    if (!form.full_name || !fullAddress) return;
+
+    // Grab authenticated session profile to satisfy the created_by_user_id foreign key constraint
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData?.session?.user?.id;
+
+    if (!userId) {
+      console.error("Missing valid user session token to satisfy DB foreign key constraint.");
       return;
     }
 
     if (editingId) {
-      setRecords((current) =>
-        current.map((item) =>
-          item.id === editingId
-            ? {
-                ...item,
-                dateReleased: form.dateReleased,
-                assistanceType: form.assistanceType,
-                beneficiaryName: form.beneficiaryName,
-                beneficiaryId: form.beneficiaryId,
-                beneficiaryProvince: form.beneficiaryProvince,
-                beneficiaryMunicipality: form.beneficiaryMunicipality,
-                beneficiaryBarangay: form.beneficiaryBarangay,
-                beneficiaryProvinceCode: provinceCode,
-                beneficiaryMunicipalityCode: municipalityCode,
-                releasingOfficer: form.releasingOfficer,
-                amount: amountNumber,
-              }
-            : item,
-        ),
-      );
-      resetForm();
-      return;
+      // Execute standard public table mutation update command matching your snippet design patterns
+      const { error } = await supabase
+        .from("beneficiaries")
+        .update({
+          full_name: form.full_name,
+          address: fullAddress,
+          contact_number: form.contact_number || null,
+          assistance_category_id: form.assistance_category_id,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", editingId);
+
+      if (error) {
+        console.error("Failed to execute update row mutation on database:", error);
+        return;
+      }
+    } else {
+      // Execute insert operation row append transaction
+      const { error } = await supabase
+        .from("beneficiaries")
+        .insert([
+          {
+            full_name: form.full_name,
+            address: fullAddress,
+            contact_number: form.contact_number || null,
+            assistance_category_id: form.assistance_category_id,
+            created_by_user_id: userId,
+          },
+        ]);
+
+      if (error) {
+        console.error("Failed to write single row allocation parameters:", error);
+        return;
+      }
     }
 
-    const newRecord: ReleaseRecord = {
-      id: buildReleaseId(records),
-      dateReleased: form.dateReleased,
-      assistanceType: form.assistanceType,
-      beneficiaryName: form.beneficiaryName,
-      beneficiaryId: form.beneficiaryId,
-
-      beneficiaryProvince: form.beneficiaryProvince,
-      beneficiaryMunicipality: form.beneficiaryMunicipality,
-      beneficiaryBarangay: form.beneficiaryBarangay,
-
-      beneficiaryProvinceCode: provinceCode,
-      beneficiaryMunicipalityCode: municipalityCode,
-
-      releasingOfficer: form.releasingOfficer,
-      amount: amountNumber,
-    };
-
-    setRecords((current) => [newRecord, ...current]);
+    await fetchRecords();
     resetForm();
   }
 
-  function onEdit(item: ReleaseRecord) {
+  function onEdit(item: BeneficiaryRecord) {
     setEditingId(item.id);
-    setForm({
-      dateReleased: item.dateReleased,
-      assistanceType: item.assistanceType,
-      beneficiaryName: item.beneficiaryName,
-      beneficiaryId: item.beneficiaryId,
-      beneficiaryProvince: item.beneficiaryProvince,
-      beneficiaryMunicipality: item.beneficiaryMunicipality,
-      beneficiaryBarangay: item.beneficiaryBarangay,
-      releasingOfficer: item.releasingOfficer,
-      amount: String(item.amount),
-    });
 
-    // Restore dropdown codes so the useEffect hooks re-fetch
-    // municipalities and barangays for this record
-    setProvinceCode(item.beneficiaryProvinceCode);
-    setMunicipalityCode(item.beneficiaryMunicipalityCode);
+    // Deconstruct historical address texts safely back into forms
+    const segments = item.address.split(", ");
+    const brgyName = segments[0] || "";
+    const muniName = segments[1] || "";
+    const provName = segments[2] || "";
+
+    setForm({
+      full_name: item.full_name,
+      contact_number: item.contact_number || "",
+      assistance_category_id: item.assistance_category_id,
+      provinceName: provName,
+      municipalityName: muniName,
+      barangayName: brgyName,
+    });
   }
 
-  function onDelete(id: string) {
+  async function onDelete(id: number) {
+    if (!window.confirm("Are you sure you want to remove this record from the beneficiaries list?")) return;
+
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("beneficiaries")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Failed to discard beneficiary records entry row data point:", error);
+      return;
+    }
+
     setRecords((current) => current.filter((item) => item.id !== id));
     if (editingId === id) {
       resetForm();
@@ -370,330 +275,140 @@ export default function ReleaseMonitoring() {
     <main className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-10">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="bg-linear-to-r from-slate-900 via-slate-800 to-teal-700 px-6 py-8 text-white sm:px-8">
-            <p className="text-xs uppercase tracking-[0.3em] text-teal-200">
-              Admin Module
-            </p>
-            <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">
-              Distribution / Release Monitoring
-            </h1>
+          <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-teal-700 px-6 py-8 text-white sm:px-8">
+            <p className="text-xs uppercase tracking-[0.3em] text-teal-200">System Registry</p>
+            <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">Beneficiary Profile Registry</h1>
             <p className="mt-2 max-w-3xl text-sm text-slate-200 sm:text-base">
-              Record released assistance transactions with beneficiary details
-              and releasing officer information.
+              Add and maintain historical beneficiary distribution listings structured on your physical schema layouts.
             </p>
           </div>
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="grid gap-4 sm:grid-cols-2">
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-sm text-slate-500">Total Releases</p>
-            <p className="mt-1 text-2xl font-semibold text-slate-900">
-              {summary.totalReleases}
-            </p>
+            <p className="text-sm text-slate-500">Total Enrolled Profiles</p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">{summary.totalBeneficiaries}</p>
           </div>
           <div className="rounded-xl border border-teal-200 bg-teal-50 p-4 shadow-sm">
-            <p className="text-sm text-teal-700">Released Amount</p>
-            <p className="mt-1 text-xl font-semibold text-teal-900">
-              {money.format(summary.totalAmount)}
-            </p>
-          </div>
-          <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 shadow-sm">
-            <p className="text-sm text-indigo-700">Unique Beneficiaries</p>
-            <p className="mt-1 text-2xl font-semibold text-indigo-900">
-              {summary.beneficiaries}
-            </p>
-          </div>
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-            <p className="text-sm text-amber-700">Releasing Officers</p>
-            <p className="mt-1 text-2xl font-semibold text-amber-900">
-              {summary.officers}
-            </p>
+            <p className="text-sm text-teal-700">Active Allocated Allocation Groups</p>
+            <p className="mt-1 text-2xl font-semibold text-teal-900">{summary.distinctCategories}</p>
           </div>
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[1.1fr_1.9fr]">
           <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <h2 className="text-lg font-semibold text-slate-900">
-              {editingId ? "Update Release Record" : "Record Release"}
+              {editingId ? "Modify Beneficiary Data Card" : "Profile Enrolment Registration Form"}
             </h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Fill all required fields to log a release/distribution
-              transaction.
-            </p>
 
             <form className="mt-5 space-y-4" onSubmit={onSubmit}>
               <div>
-                <label
-                  htmlFor="dateReleased"
-                  className="mb-1.5 block text-sm font-medium text-slate-700"
-                >
-                  Date Released
+                <label htmlFor="full_name" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Full Legal Name
                 </label>
                 <input
-                  id="dateReleased"
+                  id="full_name"
                   required
-                  type="date"
-                  value={form.dateReleased}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      dateReleased: event.target.value,
-                    }))
-                  }
+                  type="text"
+                  value={form.full_name}
+                  onChange={(event) => setForm((current) => ({ ...current, full_name: event.target.value }))}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
+                  placeholder="First name, Middle Initial, Last name"
                 />
               </div>
 
               <div>
-                <label
-                  htmlFor="assistanceType"
-                  className="mb-1.5 block text-sm font-medium text-slate-700"
-                >
-                  Assistance Type
+                <label htmlFor="contact_number" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Contact Phone Number (Optional)
+                </label>
+                <input
+                  id="contact_number"
+                  type="text"
+                  value={form.contact_number}
+                  onChange={(event) => setForm((current) => ({ ...current, contact_number: event.target.value }))}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
+                  placeholder="e.g., 09123456789"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="assistance_category_id" className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Assistance Category Allocation Assignment
                 </label>
                 <select
-                  id="assistanceType"
-                  value={form.assistanceType}
+                  id="assistance_category_id"
+                  value={form.assistance_category_id}
                   onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      assistanceType: event.target.value as AssistanceType,
-                    }))
+                    setForm((current) => ({ ...current, assistance_category_id: Number(event.target.value) }))
                   }
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
                 >
-                  {ASSISTANCE_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
+                  {ASSISTANCE_CATEGORIES.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
                 </select>
               </div>
 
+              {/* Cascade Infrastructure Dropdown Panels */}
               <div>
-                <label
-                  htmlFor="beneficiaryName"
-                  className="mb-1.5 block text-sm font-medium text-slate-700"
-                >
-                  Beneficiary Name
-                </label>
-                <input
-                  id="beneficiaryName"
-                  required
-                  type="text"
-                  value={form.beneficiaryName}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      beneficiaryName: event.target.value,
-                    }))
-                  }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
-                  placeholder="e.g., Maria Santos"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="beneficiaryId"
-                  className="mb-1.5 block text-sm font-medium text-slate-700"
-                >
-                  Beneficiary ID
-                </label>
-                <input
-                  id="beneficiaryId"
-                  required
-                  type="text"
-                  value={form.beneficiaryId}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      beneficiaryId: event.target.value,
-                    }))
-                  }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
-                  placeholder="e.g., BEN-210"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="beneficiaryProvince"
-                  className="mb-1.5 block text-sm font-medium text-slate-700"
-                >
-                  Beneficiary Details (Province)
-                </label>
-                {provincesError && (
-                  <p className="mb-1 text-xs text-rose-600">
-                    Failed to load provinces. Please refresh the page.
-                  </p>
-                )}
+                <label htmlFor="provSelect" className="mb-1.5 block text-sm font-medium text-slate-700">Address (Province)</label>
                 <select
-                  id="beneficiaryProvince"
+                  id="provSelect"
                   disabled={provincesLoading}
                   value={provinceCode}
                   onChange={(e) => {
-                    const selectedCode = e.target.value;
-                    const selectedProvince = provinces.find(
-                      (p) => p.code === selectedCode
-                    );
-
-                    setProvinceCode(selectedCode);
+                    const matched = provinces.find((p) => p.code === e.target.value);
+                    setProvinceCode(e.target.value);
                     setMunicipalityCode("");
                     setBarangays([]);
-                    setMunicipalities([]);
-
                     setForm((current) => ({
                       ...current,
-                      beneficiaryProvince: selectedProvince?.name || "",
-                      beneficiaryMunicipality: "",
-                      beneficiaryBarangay: "",
+                      provinceName: matched?.name || "",
+                      municipalityName: "",
+                      barangayName: "",
                     }));
                   }}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring disabled:opacity-60"
                 >
-                  <option value="">
-                    {provincesLoading ? "Loading provinces…" : "Select Province"}
-                  </option>
-                  {provinces.map((province) => (
-                    <option key={province.code} value={province.code}>
-                      {province.name}
-                    </option>
-                  ))}
+                  <option value="">Select Province</option>
+                  {provinces.map((p) => <option key={p.code} value={p.code}>{p.name}</option>)}
                 </select>
               </div>
 
               <div>
-                <label
-                  htmlFor="beneficiaryMunicipality"
-                  className="mb-1.5 block text-sm font-medium text-slate-700"
-                >
-                  Beneficiary Details (Municipality)
-                </label>
-                {municipalitiesError && (
-                  <p className="mb-1 text-xs text-rose-600">
-                    Failed to load municipalities. Please re-select the province.
-                  </p>
-                )}
+                <label htmlFor="muniSelect" className="mb-1.5 block text-sm font-medium text-slate-700">Address (Municipality)</label>
                 <select
-                  id="beneficiaryMunicipality"
+                  id="muniSelect"
                   disabled={!provinceCode || municipalitiesLoading}
                   value={municipalityCode}
                   onChange={(e) => {
-                    const selectedCode = e.target.value;
-                    const selectedMunicipality = municipalities.find(
-                      (m) => m.code === selectedCode
-                    );
-
-                    setMunicipalityCode(selectedCode);
-
+                    const matched = municipalities.find((m) => m.code === e.target.value);
+                    setMunicipalityCode(e.target.value);
                     setForm((current) => ({
                       ...current,
-                      beneficiaryMunicipality:
-                        selectedMunicipality?.name || "",
-                      beneficiaryBarangay: "",
+                      municipalityName: matched?.name || "",
+                      barangayName: "",
                     }));
                   }}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring disabled:opacity-60"
                 >
-                  <option value="">
-                    {municipalitiesLoading
-                      ? "Loading municipalities…"
-                      : "Select Municipality"}
-                  </option>
-                  {municipalities.map((municipality) => (
-                    <option
-                      key={municipality.code}
-                      value={municipality.code}
-                    >
-                      {municipality.name}
-                    </option>
-                  ))}
+                  <option value="">Select Municipality</option>
+                  {municipalities.map((m) => <option key={m.code} value={m.code}>{m.name}</option>)}
                 </select>
               </div>
 
               <div>
-                <label
-                  htmlFor="beneficiaryBarangay"
-                  className="mb-1.5 block text-sm font-medium text-slate-700"
-                >
-                  Beneficiary Details (Barangay)
-                </label>
-                {barangaysError && (
-                  <p className="mb-1 text-xs text-rose-600">
-                    Failed to load barangays. Please re-select the municipality.
-                  </p>
-                )}
+                <label htmlFor="brgySelect" className="mb-1.5 block text-sm font-medium text-slate-700">Address (Barangay)</label>
                 <select
-                  id="beneficiaryBarangay"
+                  id="brgySelect"
                   disabled={!municipalityCode || barangaysLoading}
-                  value={form.beneficiaryBarangay}
-                  onChange={(e) =>
-                    setForm((current) => ({
-                      ...current,
-                      beneficiaryBarangay: e.target.value,
-                    }))
-                  }
+                  value={form.barangayName}
+                  onChange={(e) => setForm((current) => ({ ...current, barangayName: e.target.value }))}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring disabled:opacity-60"
                 >
-                  <option value="">
-                    {barangaysLoading
-                      ? "Loading barangays…"
-                      : "Select Barangay"}
-                  </option>
-                  {barangays.map((barangay) => (
-                    <option key={barangay.code} value={barangay.name}>
-                      {barangay.name}
-                    </option>
-                  ))}
+                  <option value="">Select Barangay</option>
+                  {barangays.map((b) => <option key={b.code} value={b.name}>{b.name}</option>)}
                 </select>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="releasingOfficer"
-                  className="mb-1.5 block text-sm font-medium text-slate-700"
-                >
-                  Releasing Officer
-                </label>
-                <input
-                  id="releasingOfficer"
-                  required
-                  type="text"
-                  value={form.releasingOfficer}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      releasingOfficer: event.target.value,
-                    }))
-                  }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
-                  placeholder="e.g., Officer Carla Reyes"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="amount"
-                  className="mb-1.5 block text-sm font-medium text-slate-700"
-                >
-                  Amount Released (PHP)
-                </label>
-                <input
-                  id="amount"
-                  required
-                  min={1}
-                  type="number"
-                  value={form.amount}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      amount: event.target.value,
-                    }))
-                  }
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
-                  placeholder="e.g., 5000"
-                />
               </div>
 
               <div className="flex flex-wrap gap-2 pt-1">
@@ -701,7 +416,7 @@ export default function ReleaseMonitoring() {
                   type="submit"
                   className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
                 >
-                  {editingId ? "Update Record" : "Save Record"}
+                  {editingId ? "Update Data Profile" : "Enroll Record Profile Row"}
                 </button>
                 {editingId && (
                   <button
@@ -709,44 +424,33 @@ export default function ReleaseMonitoring() {
                     onClick={resetForm}
                     className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
                   >
-                    Cancel Edit
+                    Cancel Action
                   </button>
                 )}
               </div>
             </form>
           </article>
 
+          {/* Database Log Rows Viewer */}
           <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Release Records
-            </h2>
-            <p className="text-sm text-slate-600">
-              View release history by assistance type, beneficiary details, and
-              releasing officer.
-            </p>
-
+            <h2 className="text-lg font-semibold text-slate-900">Enrolled Registered Registry Lists</h2>
+            
             <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
               <input
                 type="text"
                 value={searchText}
                 onChange={(event) => setSearchText(event.target.value)}
-                placeholder="Search by release ID, beneficiary, barangay, or officer"
+                placeholder="Search by ID, name, or street addresses parameters..."
                 className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
               />
               <select
-                value={assistanceFilter}
-                onChange={(event) =>
-                  setAssistanceFilter(
-                    event.target.value as AssistanceType | "All",
-                  )
-                }
+                value={categoryFilter}
+                onChange={(event) => setCategoryFilter(event.target.value === "All" ? "All" : Number(event.target.value))}
                 className="rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
               >
-                <option value="All">All Assistance Types</option>
-                {ASSISTANCE_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
+                <option value="All">All Categories</option>
+                {ASSISTANCE_CATEGORIES.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
             </div>
@@ -755,50 +459,26 @@ export default function ReleaseMonitoring() {
               <table className="min-w-full divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-100 text-left text-slate-700">
                   <tr>
-                    <th className="px-4 py-3 font-semibold">Release</th>
-                    <th className="px-4 py-3 font-semibold">Date Released</th>
-                    <th className="px-4 py-3 font-semibold">Assistance Type</th>
-                    <th className="px-4 py-3 font-semibold">
-                      Beneficiary Details
-                    </th>
-                    <th className="px-4 py-3 font-semibold">
-                      Releasing Officer
-                    </th>
-                    <th className="px-4 py-3 font-semibold">Amount</th>
+                    <th className="px-4 py-3 font-semibold">DB ID</th>
+                    <th className="px-4 py-3 font-semibold">Beneficiary Name</th>
+                    <th className="px-4 py-3 font-semibold">Contact No.</th>
+                    <th className="px-4 py-3 font-semibold">Full Address Information</th>
+                    <th className="px-4 py-3 font-semibold">Assistance Allocated</th>
                     <th className="px-4 py-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white text-slate-700">
                   {filteredRecords.map((item) => (
                     <tr key={item.id}>
-                      <td className="px-4 py-3 font-medium text-slate-900">
-                        {item.id}
-                      </td>
-                      <td className="px-4 py-3">{item.dateReleased}</td>
+                      <td className="px-4 py-3 font-mono text-slate-500">#{item.id}</td>
+                      <td className="px-4 py-3 font-medium text-slate-900">{item.full_name}</td>
+                      <td className="px-4 py-3 text-slate-600">{item.contact_number || "—"}</td>
+                      <td className="px-4 py-3 text-xs max-w-[200px] truncate" title={item.address}>{item.address}</td>
                       <td className="px-4 py-3">
                         <span className="inline-flex rounded-full bg-teal-100 px-2.5 py-1 text-xs font-medium text-teal-700">
-                          {item.assistanceType}
+                          {ASSISTANCE_CATEGORIES.find((c) => c.id === item.assistance_category_id)?.name || `Cat #${item.assistance_category_id}`}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-slate-900">
-                          {item.beneficiaryName}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {item.beneficiaryId}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {item.beneficiaryBarangay}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {item.beneficiaryMunicipality}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {item.beneficiaryProvince}
-                        </p>
-                      </td>
-                      <td className="px-4 py-3">{item.releasingOfficer}</td>
-                      <td className="px-4 py-3">{money.format(item.amount)}</td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-2">
                           <button
@@ -824,8 +504,7 @@ export default function ReleaseMonitoring() {
 
               {filteredRecords.length === 0 && (
                 <div className="px-4 py-8 text-center text-sm text-slate-500">
-                  No release records match your search and assistance type
-                  filter.
+                  No matching production rows found inside beneficiaries context.
                 </div>
               )}
             </div>
