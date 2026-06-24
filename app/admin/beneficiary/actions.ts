@@ -158,3 +158,29 @@ export async function deleteBeneficiary(id: number) {
     return { success: false, error: err.message || "Something went wrong" };
   }
 }
+
+export async function getBeneficiaryPageCounts() {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  // Count beneficiaries
+  const { count: beneficiariesCount, error: beneficiariesError } = await supabase
+    .from("beneficiaries")
+    .select("*", { count: "exact", head: true });
+
+  // Count assistance categories
+  const { count: categoriesCount, error: categoriesError } = await supabase
+    .from("assistance_categories")
+    .select("*", { count: "exact", head: true });
+
+  if (beneficiariesError || categoriesError) {
+    throw new Error(
+      beneficiariesError?.message || categoriesError?.message || "Failed to fetch counts"
+    );
+  }
+
+  return {
+    totalBeneficiaries: beneficiariesCount ?? 0,
+    totalAssistanceCategories: categoriesCount ?? 0,
+  };
+}
