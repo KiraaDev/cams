@@ -3,14 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { getApplications } from "@/app/admin/applications/action";
-import { ApplicationProps } from "@/types/application";
-
-type ApplicationStatus = "Pending" | "Approved" | "Rejected" | "Released";
+import { Application, ApplicationStatus } from "@/types/application";
 
 type ApplicationsProps = {
-  onEdit?: (item: ApplicationProps) => void;
+  onEdit?: (item: Application) => void;
   onDelete?: (id: number) => void;
   onStatusChange?: (id: number, status: ApplicationStatus) => void;
+  data: Application[];
 };
 
 function normalizeStatus(status: string): ApplicationStatus {
@@ -41,49 +40,15 @@ export default function ApplicationTable({
   onEdit,
   onDelete,
   onStatusChange,
+  data,
 }: ApplicationsProps) {
-  const [applications, setApplications] = useState<ApplicationProps[]>([]);
+  const [applications, setApplications] = useState<Application[]>(data);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "All">(
     "All",
   );
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadApplications() {
-      try {
-        setLoading(true);
-        setError("");
-
-        const data = await getApplications();
-
-        if (active) {
-          setApplications(data as ApplicationProps[]);
-        }
-      } catch (loadError) {
-        if (active) {
-          setError(
-            loadError instanceof Error
-              ? loadError.message
-              : "Failed to load applications.",
-          );
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    }
-
-    void loadApplications();
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const filteredApplications = useMemo(() => {
     const keyword = searchText.trim().toLowerCase();

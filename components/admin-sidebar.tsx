@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import SignOutButton from "@/components/auth/sign-out-button";
+import { createClient } from "@/lib/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 type NavItem = {
   label: string;
@@ -16,9 +18,10 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Application", href: "/admin/applications" },
   { label: "Program", href: "/admin/program" },
   { label: "Release Monitoring", href: "/admin/release-monitoring" },
+  { label: "Reports", href: "/admin/reports" },
 ];
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ user }: { user: User }) {
   const pathname = usePathname();
 
   return (
@@ -56,7 +59,16 @@ export default function AdminSidebar() {
           })}
         </nav>
 
-        <div className="mt-6 lg:mt-auto lg:pt-6">
+        <div className="mt-6 lg:mt-auto lg:pt-6 border-t border-slate-800 pt-4">
+          {/* USER INFO */}
+          <div className="mb-3 rounded-lg bg-slate-900/60 p-3">
+            <p className="text-xs text-slate-400">Signed in as</p>
+            <p className="text-sm font-medium text-white truncate">
+              {user.email}
+            </p>
+          </div>
+
+          {/* SIGN OUT BUTTON */}
           <SignOutButton />
         </div>
       </div>
