@@ -67,3 +67,40 @@ export async function onSubmitApplications(payload: SubmitApplicationPayload) {
 
   return { ok: true };
 }
+
+export const createApplication = async (formData: FormData) => {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  const beneficiary_id = Number(formData.get("beneficiaryId"));
+  const program_id = Number(formData.get("programId"));
+  const status = (formData.get("status") as string) || "Pending";
+  const remarks = formData.get("remarks") as string;
+
+  if (!beneficiary_id || !program_id) {
+    throw new Error("Beneficiary and Program are required");
+  }
+
+  const { error } = await supabase.from("applications").insert({
+    beneficiary_id,
+    program_id,
+    status,
+    remarks: remarks?.trim() || null,
+    created_by_user_id: user.id,
+  });
+
+  if (error) {
+    // helpful for debugging unique constraint (beneficiary_id + program_id)
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/admin/applications");
+};

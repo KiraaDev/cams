@@ -69,7 +69,7 @@ export default function StaffDashboard() {
           </div>
           <span className="text-xl font-bold">CAMS Staff</span>
         </div>
-
+<SignOutButton />
         <div className="text-right hidden sm:block">
           <p className="text-sm font-semibold">{staffProfile.name}</p>
           <p className="text-xs text-slate-500">{staffProfile.role}</p>
