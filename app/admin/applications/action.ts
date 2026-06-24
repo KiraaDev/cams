@@ -104,3 +104,79 @@ export const createApplication = async (formData: FormData) => {
 
   revalidatePath("/admin/applications");
 };
+
+export async function updateApplication(formData: FormData) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const id = Number(formData.get("id"));
+  const beneficiary_id = Number(formData.get("beneficiary_id"));
+  const program_id = Number(formData.get("program_id"));
+  const status = (formData.get("status") as string) || "Pending";
+  const remarksRaw = formData.get("remarks")?.toString() ?? "";
+
+  if (!id || Number.isNaN(id)) {
+    return { success: false, error: "Invalid application ID." };
+  }
+
+  if (!beneficiary_id || Number.isNaN(beneficiary_id)) {
+    return { success: false, error: "Beneficiary is required." };
+  }
+
+  if (!program_id || Number.isNaN(program_id)) {
+    return { success: false, error: "Program is required." };
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { error } = await supabase
+    .from("applications")
+    .update({
+      beneficiary_id,
+      program_id,
+      status,
+      remarks: remarksRaw.trim() || null,
+      reviewed_by_user_id: user?.id ?? null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/admin/applications");
+  return { success: true };
+}
+
+export async function deleteApplication(id: number) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  if (!id || Number.isNaN(id)) {
+    return { success: false, error: "Invalid application ID." };
+  }
+
+  const { data, error } = await supabase
+    .from("applications")
+    .delete()
+    .eq("id", id)
+    .select("id");
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  if (!data || data.length === 0) {
+    return {
+      success: false,
+      error:
+        "Delete did not complete. The record may not exist anymore or your account may not have delete permission.",
+    };
+  }
+
+  revalidatePath("/admin/applications");
+  return { success: true };
+}
