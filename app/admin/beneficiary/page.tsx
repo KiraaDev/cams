@@ -1,11 +1,13 @@
 import BeneficiaryStats from "../components/beneficiary-stats";
-import { getAssistanceCategories, getBeneficiaries } from "./actions";
+import { getAssistanceCategories, getBeneficiaries, getBeneficiaryPageCounts } from "./actions";
 import BeneficiaryClient from "../components/beneficiary-client-page";
 
 export default async function Beneficiary() {
   const beneficiaries = await getBeneficiaries();
 
   const assistanceCategories = await getAssistanceCategories();
+
+  const stats = await getBeneficiaryPageCounts();
 
   return (
     <main className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-10">
@@ -29,7 +31,7 @@ export default async function Beneficiary() {
 
         <div className="mx-auto flex max-w-7xl flex-col gap-6">
           {/* header + stats can stay server */}
-          <BeneficiaryStats />
+          <BeneficiaryStats data={stats}/>
 
           {/* 👇 move interactive part here */}
           <BeneficiaryClient
