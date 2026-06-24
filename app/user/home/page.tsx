@@ -70,6 +70,7 @@ export default function UserHomePage() {
           <div className="h-10 w-10 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-bold border border-indigo-200">
             GG
           </div>
+          <SignOutButton />
         </div>
       </nav>
 
