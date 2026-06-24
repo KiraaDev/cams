@@ -155,6 +155,6 @@ export async function deleteBeneficiary(id: number) {
     return { success: true };
   } catch (err: any) {
     console.error("Failed to delete beneficiary:", err);
-    return { success: false, error: err.message };
+    return { success: false, error: err.message || "Something went wrong" };
   }
 }

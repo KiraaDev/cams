@@ -1,6 +1,24 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
+import { useEffect } from "react";
+
+type Province = {
+  code: string;
+  name: string;
+};
+
+type CityMunicipality = {
+  code: string;
+  name: string;
+};
+
+type Barangay = {
+  code: string;
+  name: string;
+};
+
+
 
 type AssistanceType =
   | "Cash Assistance"
@@ -15,7 +33,11 @@ type ReleaseRecord = {
   assistanceType: AssistanceType;
   beneficiaryName: string;
   beneficiaryId: string;
+
+  beneficiaryProvince: string;
+  beneficiaryMunicipality: string;
   beneficiaryBarangay: string;
+
   releasingOfficer: string;
   amount: number;
 };
@@ -25,7 +47,11 @@ type ReleaseForm = {
   assistanceType: AssistanceType;
   beneficiaryName: string;
   beneficiaryId: string;
+
+  beneficiaryProvince: string;
+  beneficiaryMunicipality: string;
   beneficiaryBarangay: string;
+
   releasingOfficer: string;
   amount: string;
 };
@@ -76,7 +102,11 @@ const initialForm: ReleaseForm = {
   assistanceType: "Cash Assistance",
   beneficiaryName: "",
   beneficiaryId: "",
+
+  beneficiaryProvince: "",
+  beneficiaryMunicipality: "",
   beneficiaryBarangay: "",
+
   releasingOfficer: "",
   amount: "",
 };
@@ -97,6 +127,56 @@ function buildReleaseId(entries: ReleaseRecord[]) {
 }
 
 export default function ReleaseMonitoring() {
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [municipalities, setMunicipalities] = useState<CityMunicipality[]>([]);
+  const [barangays, setBarangays] = useState<Barangay[]>([]);
+
+  const [provinceCode, setProvinceCode] = useState("");
+  const [municipalityCode, setMunicipalityCode] = useState("");
+
+  useEffect(() => {
+    fetch("https://psgc.gitlab.io/api/provinces/")
+      .then((res) => res.json())
+      .then((data) =>
+        setProvinces(
+          data.sort((a: Province, b: Province) =>
+            a.name.localeCompare(b.name)
+          )
+        )
+      );
+  }, []);
+
+  useEffect(() => {
+    if (!provinceCode) return;
+
+    fetch(
+      `https://psgc.gitlab.io/api/provinces/${provinceCode}/cities-municipalities/`
+    )
+      .then((res) => res.json())
+      .then((data) =>
+        setMunicipalities(
+          data.sort((a: CityMunicipality, b: CityMunicipality) =>
+            a.name.localeCompare(b.name)
+          )
+        )
+      );
+  }, [provinceCode]);
+
+  useEffect(() => {
+    if (!municipalityCode) return;
+
+    fetch(
+      `https://psgc.gitlab.io/api/cities-municipalities/${municipalityCode}/barangays/`
+    )
+      .then((res) => res.json())
+      .then((data) =>
+        setBarangays(
+          data.sort((a: Barangay, b: Barangay) =>
+            a.name.localeCompare(b.name)
+          )
+        )
+      );
+  }, [municipalityCode]);
   const [records, setRecords] = useState<ReleaseRecord[]>(SAMPLE_RELEASES);
   const [form, setForm] = useState<ReleaseForm>(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -184,7 +264,11 @@ export default function ReleaseMonitoring() {
       assistanceType: form.assistanceType,
       beneficiaryName: form.beneficiaryName,
       beneficiaryId: form.beneficiaryId,
+
+      beneficiaryProvince: form.beneficiaryProvince,
+      beneficiaryMunicipality: form.beneficiaryMunicipality,
       beneficiaryBarangay: form.beneficiaryBarangay,
+      
       releasingOfficer: form.releasingOfficer,
       amount: amountNumber,
     };
@@ -200,6 +284,8 @@ export default function ReleaseMonitoring() {
       assistanceType: item.assistanceType,
       beneficiaryName: item.beneficiaryName,
       beneficiaryId: item.beneficiaryId,
+      beneficiaryProvince: item.beneficiaryProvince,
+      beneficiaryMunicipality: item.beneficiaryMunicipality,
       beneficiaryBarangay: item.beneficiaryBarangay,
       releasingOfficer: item.releasingOfficer,
       amount: String(item.amount),
@@ -340,7 +426,6 @@ export default function ReleaseMonitoring() {
                 />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label
                     htmlFor="beneficiaryId"
@@ -363,28 +448,117 @@ export default function ReleaseMonitoring() {
                     placeholder="e.g., BEN-210"
                   />
                 </div>
-                <div>
-                  <label
+              
+              <div>
+                <label
+                    htmlFor="beneficiaryProvince"
+                    className="mb-1.5 block text-sm font-medium text-slate-700"
+                  >
+                    Beneficiary Details (Province)
+                  </label>
+                <select
+                  value={provinceCode}
+                  onChange={(e) => {
+                    const selectedCode = e.target.value;
+
+                    const selectedProvince = provinces.find(
+                      (p) => p.code === selectedCode
+                    );
+
+                    setProvinceCode(selectedCode);
+                    setMunicipalityCode("");
+                    setBarangays([]);
+                    setMunicipalities([]);
+
+                    setForm((current) => ({
+                      ...current,
+                      beneficiaryProvince: selectedProvince?.name || "",
+                      beneficiaryMunicipality: "",
+                      beneficiaryBarangay: "",
+                    }));
+                  }}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
+                >
+                  <option value="">Select Province</option>
+
+                  {provinces.map((province) => (
+                    <option key={province.code} value={province.code}>
+                      {province.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label
+                    htmlFor="beneficiaryMunicipality"
+                    className="mb-1.5 block text-sm font-medium text-slate-700"
+                  >
+                    Beneficiary Details (Municipality)
+                </label>
+                <select
+                  disabled={!provinceCode}
+                  value={municipalityCode}
+                  onChange={(e) => {
+                    const selectedCode = e.target.value;
+
+                    const selectedMunicipality = municipalities.find(
+                      (m) => m.code === selectedCode
+                    );
+
+                    setMunicipalityCode(selectedCode);
+
+                    setForm((current) => ({
+                      ...current,
+                      beneficiaryMunicipality:
+                        selectedMunicipality?.name || "",
+                      beneficiaryBarangay: "",
+                    }));
+                  }}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
+                >
+                  <option value="">Select Municipality</option>
+
+                  {municipalities.map((municipality) => (
+                    <option
+                      key={municipality.code}
+                      value={municipality.code}
+                    >
+                      {municipality.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label
                     htmlFor="beneficiaryBarangay"
                     className="mb-1.5 block text-sm font-medium text-slate-700"
                   >
                     Beneficiary Details (Barangay)
-                  </label>
-                  <input
-                    id="beneficiaryBarangay"
-                    required
-                    type="text"
-                    value={form.beneficiaryBarangay}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        beneficiaryBarangay: event.target.value,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
-                    placeholder="e.g., Barangay Mabini"
-                  />
-                </div>
+                </label>
+                <select
+                  disabled={!municipalityCode}
+                  value={form.beneficiaryBarangay}
+                  onChange={(e) =>
+                    setForm((current) => ({
+                      ...current,
+                      beneficiaryBarangay: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
+                >
+                  <option value="">Select Barangay</option>
+
+                  {barangays.map((barangay) => (
+                    <option
+                      key={barangay.code}
+                      value={barangay.name}
+                    >
+                      {barangay.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
