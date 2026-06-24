@@ -1,6 +1,22 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
+import { useEffect } from "react";
+
+type Province = {
+  code: string;
+  name: string;
+};
+
+type CityMunicipality = {
+  code: string;
+  name: string;
+};
+
+type Barangay = {
+  code: string;
+  name: string;
+};
 
 type AssistanceType =
   | "Cash Assistance"
@@ -15,7 +31,15 @@ type ReleaseRecord = {
   assistanceType: AssistanceType;
   beneficiaryName: string;
   beneficiaryId: string;
+
+  beneficiaryProvince: string;
+  beneficiaryMunicipality: string;
   beneficiaryBarangay: string;
+
+  // PSGC codes stored so edit can restore the cascading dropdowns
+  beneficiaryProvinceCode: string;
+  beneficiaryMunicipalityCode: string;
+
   releasingOfficer: string;
   amount: number;
 };
@@ -25,7 +49,11 @@ type ReleaseForm = {
   assistanceType: AssistanceType;
   beneficiaryName: string;
   beneficiaryId: string;
+
+  beneficiaryProvince: string;
+  beneficiaryMunicipality: string;
   beneficiaryBarangay: string;
+
   releasingOfficer: string;
   amount: string;
 };
@@ -38,6 +66,7 @@ const ASSISTANCE_TYPES: AssistanceType[] = [
   "Livelihood Kit",
 ];
 
+// PSGC codes: Bulacan → 030800000 | Malolos City → 031404000
 const SAMPLE_RELEASES: ReleaseRecord[] = [
   {
     id: "REL-5001",
@@ -45,7 +74,11 @@ const SAMPLE_RELEASES: ReleaseRecord[] = [
     assistanceType: "Cash Assistance",
     beneficiaryName: "Maria Santos",
     beneficiaryId: "BEN-201",
+    beneficiaryProvince: "Bulacan",
+    beneficiaryMunicipality: "Malolos City",
     beneficiaryBarangay: "Barangay San Isidro",
+    beneficiaryProvinceCode: "030800000",
+    beneficiaryMunicipalityCode: "031404000",
     releasingOfficer: "Officer Ramon Dela Peña",
     amount: 5000,
   },
@@ -55,7 +88,11 @@ const SAMPLE_RELEASES: ReleaseRecord[] = [
     assistanceType: "Medical Support",
     beneficiaryName: "John Dela Cruz",
     beneficiaryId: "BEN-202",
+    beneficiaryProvince: "Bulacan",
+    beneficiaryMunicipality: "Malolos City",
     beneficiaryBarangay: "Barangay Mabini",
+    beneficiaryProvinceCode: "030800000",
+    beneficiaryMunicipalityCode: "031404000",
     releasingOfficer: "Officer Carla Reyes",
     amount: 12000,
   },
@@ -65,7 +102,11 @@ const SAMPLE_RELEASES: ReleaseRecord[] = [
     assistanceType: "Food Pack",
     beneficiaryName: "Liza Ramos",
     beneficiaryId: "BEN-203",
+    beneficiaryProvince: "Bulacan",
+    beneficiaryMunicipality: "Malolos City",
     beneficiaryBarangay: "Barangay Sto. Nino",
+    beneficiaryProvinceCode: "030800000",
+    beneficiaryMunicipalityCode: "031404000",
     releasingOfficer: "Officer Carlo Mendoza",
     amount: 2500,
   },
@@ -76,7 +117,11 @@ const initialForm: ReleaseForm = {
   assistanceType: "Cash Assistance",
   beneficiaryName: "",
   beneficiaryId: "",
+
+  beneficiaryProvince: "",
+  beneficiaryMunicipality: "",
   beneficiaryBarangay: "",
+
   releasingOfficer: "",
   amount: "",
 };
@@ -97,6 +142,86 @@ function buildReleaseId(entries: ReleaseRecord[]) {
 }
 
 export default function ReleaseMonitoring() {
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [municipalities, setMunicipalities] = useState<CityMunicipality[]>([]);
+  const [barangays, setBarangays] = useState<Barangay[]>([]);
+
+  const [provinceCode, setProvinceCode] = useState("");
+  const [municipalityCode, setMunicipalityCode] = useState("");
+
+  // Loading / error states for each PSGC level
+  const [provincesLoading, setProvincesLoading] = useState(false);
+  const [provincesError, setProvincesError] = useState(false);
+  const [municipalitiesLoading, setMunicipalitiesLoading] = useState(false);
+  const [municipalitiesError, setMunicipalitiesError] = useState(false);
+  const [barangaysLoading, setBarangaysLoading] = useState(false);
+  const [barangaysError, setBarangaysError] = useState(false);
+
+  useEffect(() => {
+    setProvincesLoading(true);
+    setProvincesError(false);
+    fetch("https://psgc.gitlab.io/api/provinces/")
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then((data) =>
+        setProvinces(
+          data.sort((a: Province, b: Province) =>
+            a.name.localeCompare(b.name)
+          )
+        )
+      )
+      .catch(() => setProvincesError(true))
+      .finally(() => setProvincesLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!provinceCode) return;
+
+    setMunicipalitiesLoading(true);
+    setMunicipalitiesError(false);
+    fetch(
+      `https://psgc.gitlab.io/api/provinces/${provinceCode}/cities-municipalities/`
+    )
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then((data) =>
+        setMunicipalities(
+          data.sort((a: CityMunicipality, b: CityMunicipality) =>
+            a.name.localeCompare(b.name)
+          )
+        )
+      )
+      .catch(() => setMunicipalitiesError(true))
+      .finally(() => setMunicipalitiesLoading(false));
+  }, [provinceCode]);
+
+  useEffect(() => {
+    if (!municipalityCode) return;
+
+    setBarangaysLoading(true);
+    setBarangaysError(false);
+    fetch(
+      `https://psgc.gitlab.io/api/cities-municipalities/${municipalityCode}/barangays/`
+    )
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then((data) =>
+        setBarangays(
+          data.sort((a: Barangay, b: Barangay) =>
+            a.name.localeCompare(b.name)
+          )
+        )
+      )
+      .catch(() => setBarangaysError(true))
+      .finally(() => setBarangaysLoading(false));
+  }, [municipalityCode]);
+
   const [records, setRecords] = useState<ReleaseRecord[]>(SAMPLE_RELEASES);
   const [form, setForm] = useState<ReleaseForm>(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -124,7 +249,9 @@ export default function ReleaseMonitoring() {
         record.beneficiaryName.toLowerCase().includes(keyword) ||
         record.beneficiaryId.toLowerCase().includes(keyword) ||
         record.releasingOfficer.toLowerCase().includes(keyword) ||
-        record.beneficiaryBarangay.toLowerCase().includes(keyword);
+        record.beneficiaryBarangay.toLowerCase().includes(keyword) ||
+        record.beneficiaryMunicipality.toLowerCase().includes(keyword) ||
+        record.beneficiaryProvince.toLowerCase().includes(keyword);
 
       const matchesAssistance =
         assistanceFilter === "All" ||
@@ -137,6 +264,12 @@ export default function ReleaseMonitoring() {
   function resetForm() {
     setForm(initialForm);
     setEditingId(null);
+
+    setProvinceCode("");
+    setMunicipalityCode("");
+
+    setMunicipalities([]);
+    setBarangays([]);
   }
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -147,6 +280,8 @@ export default function ReleaseMonitoring() {
       !form.dateReleased ||
       !form.beneficiaryName ||
       !form.beneficiaryId ||
+      !form.beneficiaryProvince ||
+      !form.beneficiaryMunicipality ||
       !form.beneficiaryBarangay ||
       !form.releasingOfficer
     ) {
@@ -167,7 +302,11 @@ export default function ReleaseMonitoring() {
                 assistanceType: form.assistanceType,
                 beneficiaryName: form.beneficiaryName,
                 beneficiaryId: form.beneficiaryId,
+                beneficiaryProvince: form.beneficiaryProvince,
+                beneficiaryMunicipality: form.beneficiaryMunicipality,
                 beneficiaryBarangay: form.beneficiaryBarangay,
+                beneficiaryProvinceCode: provinceCode,
+                beneficiaryMunicipalityCode: municipalityCode,
                 releasingOfficer: form.releasingOfficer,
                 amount: amountNumber,
               }
@@ -184,7 +323,14 @@ export default function ReleaseMonitoring() {
       assistanceType: form.assistanceType,
       beneficiaryName: form.beneficiaryName,
       beneficiaryId: form.beneficiaryId,
+
+      beneficiaryProvince: form.beneficiaryProvince,
+      beneficiaryMunicipality: form.beneficiaryMunicipality,
       beneficiaryBarangay: form.beneficiaryBarangay,
+
+      beneficiaryProvinceCode: provinceCode,
+      beneficiaryMunicipalityCode: municipalityCode,
+
       releasingOfficer: form.releasingOfficer,
       amount: amountNumber,
     };
@@ -200,10 +346,17 @@ export default function ReleaseMonitoring() {
       assistanceType: item.assistanceType,
       beneficiaryName: item.beneficiaryName,
       beneficiaryId: item.beneficiaryId,
+      beneficiaryProvince: item.beneficiaryProvince,
+      beneficiaryMunicipality: item.beneficiaryMunicipality,
       beneficiaryBarangay: item.beneficiaryBarangay,
       releasingOfficer: item.releasingOfficer,
       amount: String(item.amount),
     });
+
+    // Restore dropdown codes so the useEffect hooks re-fetch
+    // municipalities and barangays for this record
+    setProvinceCode(item.beneficiaryProvinceCode);
+    setMunicipalityCode(item.beneficiaryMunicipalityCode);
   }
 
   function onDelete(id: string) {
@@ -340,51 +493,160 @@ export default function ReleaseMonitoring() {
                 />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="beneficiaryId"
-                    className="mb-1.5 block text-sm font-medium text-slate-700"
-                  >
-                    Beneficiary ID
-                  </label>
-                  <input
-                    id="beneficiaryId"
-                    required
-                    type="text"
-                    value={form.beneficiaryId}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        beneficiaryId: event.target.value,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
-                    placeholder="e.g., BEN-210"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="beneficiaryBarangay"
-                    className="mb-1.5 block text-sm font-medium text-slate-700"
-                  >
-                    Beneficiary Details (Barangay)
-                  </label>
-                  <input
-                    id="beneficiaryBarangay"
-                    required
-                    type="text"
-                    value={form.beneficiaryBarangay}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        beneficiaryBarangay: event.target.value,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
-                    placeholder="e.g., Barangay Mabini"
-                  />
-                </div>
+              <div>
+                <label
+                  htmlFor="beneficiaryId"
+                  className="mb-1.5 block text-sm font-medium text-slate-700"
+                >
+                  Beneficiary ID
+                </label>
+                <input
+                  id="beneficiaryId"
+                  required
+                  type="text"
+                  value={form.beneficiaryId}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      beneficiaryId: event.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
+                  placeholder="e.g., BEN-210"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="beneficiaryProvince"
+                  className="mb-1.5 block text-sm font-medium text-slate-700"
+                >
+                  Beneficiary Details (Province)
+                </label>
+                {provincesError && (
+                  <p className="mb-1 text-xs text-rose-600">
+                    Failed to load provinces. Please refresh the page.
+                  </p>
+                )}
+                <select
+                  id="beneficiaryProvince"
+                  disabled={provincesLoading}
+                  value={provinceCode}
+                  onChange={(e) => {
+                    const selectedCode = e.target.value;
+                    const selectedProvince = provinces.find(
+                      (p) => p.code === selectedCode
+                    );
+
+                    setProvinceCode(selectedCode);
+                    setMunicipalityCode("");
+                    setBarangays([]);
+                    setMunicipalities([]);
+
+                    setForm((current) => ({
+                      ...current,
+                      beneficiaryProvince: selectedProvince?.name || "",
+                      beneficiaryMunicipality: "",
+                      beneficiaryBarangay: "",
+                    }));
+                  }}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring disabled:opacity-60"
+                >
+                  <option value="">
+                    {provincesLoading ? "Loading provinces…" : "Select Province"}
+                  </option>
+                  {provinces.map((province) => (
+                    <option key={province.code} value={province.code}>
+                      {province.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="beneficiaryMunicipality"
+                  className="mb-1.5 block text-sm font-medium text-slate-700"
+                >
+                  Beneficiary Details (Municipality)
+                </label>
+                {municipalitiesError && (
+                  <p className="mb-1 text-xs text-rose-600">
+                    Failed to load municipalities. Please re-select the province.
+                  </p>
+                )}
+                <select
+                  id="beneficiaryMunicipality"
+                  disabled={!provinceCode || municipalitiesLoading}
+                  value={municipalityCode}
+                  onChange={(e) => {
+                    const selectedCode = e.target.value;
+                    const selectedMunicipality = municipalities.find(
+                      (m) => m.code === selectedCode
+                    );
+
+                    setMunicipalityCode(selectedCode);
+
+                    setForm((current) => ({
+                      ...current,
+                      beneficiaryMunicipality:
+                        selectedMunicipality?.name || "",
+                      beneficiaryBarangay: "",
+                    }));
+                  }}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring disabled:opacity-60"
+                >
+                  <option value="">
+                    {municipalitiesLoading
+                      ? "Loading municipalities…"
+                      : "Select Municipality"}
+                  </option>
+                  {municipalities.map((municipality) => (
+                    <option
+                      key={municipality.code}
+                      value={municipality.code}
+                    >
+                      {municipality.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="beneficiaryBarangay"
+                  className="mb-1.5 block text-sm font-medium text-slate-700"
+                >
+                  Beneficiary Details (Barangay)
+                </label>
+                {barangaysError && (
+                  <p className="mb-1 text-xs text-rose-600">
+                    Failed to load barangays. Please re-select the municipality.
+                  </p>
+                )}
+                <select
+                  id="beneficiaryBarangay"
+                  disabled={!municipalityCode || barangaysLoading}
+                  value={form.beneficiaryBarangay}
+                  onChange={(e) =>
+                    setForm((current) => ({
+                      ...current,
+                      beneficiaryBarangay: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring disabled:opacity-60"
+                >
+                  <option value="">
+                    {barangaysLoading
+                      ? "Loading barangays…"
+                      : "Select Barangay"}
+                  </option>
+                  {barangays.map((barangay) => (
+                    <option key={barangay.code} value={barangay.name}>
+                      {barangay.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -527,6 +789,12 @@ export default function ReleaseMonitoring() {
                         </p>
                         <p className="text-xs text-slate-500">
                           {item.beneficiaryBarangay}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {item.beneficiaryMunicipality}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {item.beneficiaryProvince}
                         </p>
                       </td>
                       <td className="px-4 py-3">{item.releasingOfficer}</td>
