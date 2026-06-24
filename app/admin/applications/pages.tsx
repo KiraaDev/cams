@@ -4,6 +4,9 @@ import ApplicationTable from "@/app/admin/components/application-table";
 import ApplicationStats from "../components/application-stats";
 import ApplicationForm from "../components/application-form";
 import ApplicationAddButton from "../components/application-add-button";
+import EditApplicationModal from "../components/edit-application-modal";
+import DeleteApplicationModal from "../components/delete-application-modal";
+import { getApplications } from "./action";
 
 import { FormEvent, useMemo, useState } from "react";
 import { Application, ApplicationStatus } from "@/types/application";
@@ -63,6 +66,19 @@ export default function ApplicationPage({ data }: ApplicationProps) {
   );
 
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedApplication, setSelectedApplication] =
+    useState<Application | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Application | null>(null);
+  const [tableData, setTableData] = useState<Application[]>(data);
+
+  async function refreshApplications() {
+    try {
+      const latest = await getApplications();
+      setTableData(latest);
+    } catch (refreshError) {
+      console.error("Failed to refresh applications:", refreshError);
+    }
+  }
 
   function resetForm() {
     setForm(initialForm);
@@ -163,17 +179,39 @@ export default function ApplicationPage({ data }: ApplicationProps) {
           </div>
         </section>
 
-        <ApplicationAddButton isOpen={isOpen} setIsOpen={setIsOpen} />
         <ApplicationStats />
-
+        <ApplicationAddButton isOpen={isOpen} setIsOpen={setIsOpen} />
         <section className="grid gap-6">
           {/* application-form */}
           <ApplicationForm isOpen={isOpen} setIsOpen={setIsOpen} />
           <article className="rounded-2xl border border-slate-200 bg-white w-full p-5 shadow-sm sm:p-6">
             {/* application-table */}
-            <ApplicationTable data={data} />
+            <ApplicationTable
+              data={tableData}
+              onEdit={setSelectedApplication}
+              onDelete={(id) => {
+                const target = tableData.find((item) => item.id === id) ?? null;
+                setDeleteTarget(target);
+              }}
+            />
           </article>
         </section>
+
+        {selectedApplication && (
+          <EditApplicationModal
+            application={selectedApplication}
+            onClose={() => setSelectedApplication(null)}
+            onUpdated={refreshApplications}
+          />
+        )}
+
+        {deleteTarget && (
+          <DeleteApplicationModal
+            application={deleteTarget}
+            onClose={() => setDeleteTarget(null)}
+            onDeleted={refreshApplications}
+          />
+        )}
       </div>
     </main>
   );

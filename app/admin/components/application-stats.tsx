@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { getApplications } from "@/app/admin/applications/action";
-import { ApplicationProps } from '@/types/application';
+import { Application } from '@/types/application';
 
 
 function ApplicationStats() {
-  const [applications, setApplications] = useState<ApplicationProps[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
 
   useEffect(() => {
     async function fetchApplications() {

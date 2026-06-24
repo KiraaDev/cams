@@ -234,12 +234,6 @@ export default function ApplicationTable({
             No application records match your current search or status filter.
           </div>
         )}
-
-        {loading && (
-          <div className="px-4 py-8 text-center text-sm text-slate-500">
-            Loading applications from Supabase...
-          </div>
-        )}
       </div>
     </div>
   );
