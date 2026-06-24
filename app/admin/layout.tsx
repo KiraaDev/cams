@@ -5,6 +5,7 @@ import { jwtDecode } from "jwt-decode";
 
 import { createClient } from "@/lib/supabase/server";
 import { AppRole, CustomJWTPayload } from "@/types/user";
+import AdminSidebar from "@/components/admin-sidebar";
 
 export default async function AdminLayout({
   children,
@@ -22,9 +23,7 @@ export default async function AdminLayout({
     redirect("/auth/login");
   }
 
-  const jwt = jwtDecode<CustomJWTPayload>(
-    session.access_token
-  );
+  const jwt = jwtDecode<CustomJWTPayload>(session.access_token);
 
   const role: AppRole | undefined = jwt.user_role;
 
@@ -37,8 +36,9 @@ export default async function AdminLayout({
   }
 
   return (
-    <div>
-      {children}
+    <div className="min-h-screen bg-slate-100 lg:flex">
+      <AdminSidebar />
+      <div className="min-w-0 flex-1">{children}</div>
     </div>
   );
 }
