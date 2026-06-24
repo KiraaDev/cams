@@ -1,0 +1,44 @@
+import { ReactNode } from "react";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { jwtDecode } from "jwt-decode";
+
+import { createClient } from "@/lib/supabase/server";
+import { AppRole, CustomJWTPayload } from "@/types/user";
+
+export default async function AdminLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    redirect("/auth/login");
+  }
+
+  const jwt = jwtDecode<CustomJWTPayload>(
+    session.access_token
+  );
+
+  const role: AppRole | undefined = jwt.user_role;
+
+  if (role !== "admin") {
+    if (role === "user") {
+      redirect("/user/home");
+    }
+
+    redirect("/auth/login");
+  }
+
+  return (
+    <div>
+      {children}
+    </div>
+  );
+}
