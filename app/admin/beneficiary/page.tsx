@@ -78,12 +78,14 @@ const initialForm: BeneficiaryForm = {
 };
 
 export default function Beneficiary() {
-  const [records, setRecords] = useState<BeneficiaryRecord[]>(SAMPLE_BENEFICIARIES);
+  const [records, setRecords] =
+    useState<BeneficiaryRecord[]>(SAMPLE_BENEFICIARIES);
   const [form, setForm] = useState<BeneficiaryForm>(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
-  const [categoryFilter, setCategoryFilter] =
-    useState<AssistanceCategory | "All">("All");
+  const [categoryFilter, setCategoryFilter] = useState<
+    AssistanceCategory | "All"
+  >("All");
 
   const summary = useMemo(() => {
     return {
@@ -189,11 +191,15 @@ export default function Beneficiary() {
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="bg-linear-to-r from-slate-900 via-slate-800 to-blue-700 px-6 py-8 text-white sm:px-8">
-            <p className="text-xs uppercase tracking-[0.3em] text-blue-200">Admin Module</p>
-            <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">Beneficiary Management</h1>
+            <p className="text-xs uppercase tracking-[0.3em] text-blue-200">
+              Admin Module
+            </p>
+            <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">
+              Beneficiary Management
+            </h1>
             <p className="mt-2 max-w-3xl text-sm text-slate-200 sm:text-base">
-              Register beneficiaries, keep records current, and manage assistance category
-              assignments.
+              Register beneficiaries, keep records current, and manage
+              assistance category assignments.
             </p>
           </div>
         </section>
@@ -201,15 +207,21 @@ export default function Beneficiary() {
         <section className="grid gap-4 sm:grid-cols-3">
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="text-sm text-slate-500">Total Beneficiaries</p>
-            <p className="mt-1 text-2xl font-semibold text-slate-900">{summary.total}</p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">
+              {summary.total}
+            </p>
           </div>
           <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-sm">
             <p className="text-sm text-blue-700">Assistance Categories</p>
-            <p className="mt-1 text-2xl font-semibold text-blue-900">{summary.categories}</p>
+            <p className="mt-1 text-2xl font-semibold text-blue-900">
+              {summary.categories}
+            </p>
           </div>
           <div className="rounded-xl border border-cyan-200 bg-cyan-50 p-4 shadow-sm">
             <p className="text-sm text-cyan-700">Latest Registration</p>
-            <p className="mt-1 text-2xl font-semibold text-cyan-900">{summary.latestRegistration}</p>
+            <p className="mt-1 text-2xl font-semibold text-cyan-900">
+              {summary.latestRegistration}
+            </p>
           </div>
         </section>
 
@@ -247,7 +259,10 @@ export default function Beneficiary() {
               </div>
 
               <div>
-                <label htmlFor="fullName" className="mb-1.5 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="fullName"
+                  className="mb-1.5 block text-sm font-medium text-slate-700"
+                >
                   Full Name
                 </label>
                 <input
@@ -267,7 +282,10 @@ export default function Beneficiary() {
               </div>
 
               <div>
-                <label htmlFor="address" className="mb-1.5 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="address"
+                  className="mb-1.5 block text-sm font-medium text-slate-700"
+                >
                   Address
                 </label>
                 <textarea
@@ -276,7 +294,10 @@ export default function Beneficiary() {
                   rows={2}
                   value={form.address}
                   onChange={(event) =>
-                    setForm((current) => ({ ...current, address: event.target.value }))
+                    setForm((current) => ({
+                      ...current,
+                      address: event.target.value,
+                    }))
                   }
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-blue-400 transition focus:border-blue-500 focus:ring"
                   placeholder="Street, Barangay, City"
@@ -319,7 +340,8 @@ export default function Beneficiary() {
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      assistanceCategory: event.target.value as AssistanceCategory,
+                      assistanceCategory: event.target
+                        .value as AssistanceCategory,
                     }))
                   }
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-blue-400 transition focus:border-blue-500 focus:ring"
@@ -353,7 +375,9 @@ export default function Beneficiary() {
           </article>
 
           <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <h2 className="text-lg font-semibold text-slate-900">Beneficiary Records</h2>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Beneficiary Records
+            </h2>
             <p className="text-sm text-slate-600">
               View, search, and manage beneficiary information.
             </p>
@@ -369,7 +393,9 @@ export default function Beneficiary() {
               <select
                 value={categoryFilter}
                 onChange={(event) =>
-                  setCategoryFilter(event.target.value as AssistanceCategory | "All")
+                  setCategoryFilter(
+                    event.target.value as AssistanceCategory | "All",
+                  )
                 }
                 className="rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-blue-400 transition focus:border-blue-500 focus:ring"
               >
@@ -390,14 +416,18 @@ export default function Beneficiary() {
                     <th className="px-4 py-3 font-semibold">Full Name</th>
                     <th className="px-4 py-3 font-semibold">Address</th>
                     <th className="px-4 py-3 font-semibold">Contact Number</th>
-                    <th className="px-4 py-3 font-semibold">Assistance Category</th>
+                    <th className="px-4 py-3 font-semibold">
+                      Assistance Category
+                    </th>
                     <th className="px-4 py-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white text-slate-700">
                   {filteredRecords.map((item) => (
                     <tr key={item.beneficiaryId}>
-                      <td className="px-4 py-3 font-medium text-slate-900">{item.beneficiaryId}</td>
+                      <td className="px-4 py-3 font-medium text-slate-900">
+                        {item.beneficiaryId}
+                      </td>
                       <td className="px-4 py-3">{item.fullName}</td>
                       <td className="px-4 py-3">{item.address}</td>
                       <td className="px-4 py-3">{item.contactNumber}</td>

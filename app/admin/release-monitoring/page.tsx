@@ -101,8 +101,9 @@ export default function ReleaseMonitoring() {
   const [form, setForm] = useState<ReleaseForm>(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
-  const [assistanceFilter, setAssistanceFilter] =
-    useState<AssistanceType | "All">("All");
+  const [assistanceFilter, setAssistanceFilter] = useState<
+    AssistanceType | "All"
+  >("All");
 
   const summary = useMemo(() => {
     return {
@@ -126,7 +127,8 @@ export default function ReleaseMonitoring() {
         record.beneficiaryBarangay.toLowerCase().includes(keyword);
 
       const matchesAssistance =
-        assistanceFilter === "All" || record.assistanceType === assistanceFilter;
+        assistanceFilter === "All" ||
+        record.assistanceType === assistanceFilter;
 
       return matchesKeyword && matchesAssistance;
     });
@@ -216,11 +218,15 @@ export default function ReleaseMonitoring() {
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="bg-linear-to-r from-slate-900 via-slate-800 to-teal-700 px-6 py-8 text-white sm:px-8">
-            <p className="text-xs uppercase tracking-[0.3em] text-teal-200">Admin Module</p>
-            <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">Distribution / Release Monitoring</h1>
+            <p className="text-xs uppercase tracking-[0.3em] text-teal-200">
+              Admin Module
+            </p>
+            <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">
+              Distribution / Release Monitoring
+            </h1>
             <p className="mt-2 max-w-3xl text-sm text-slate-200 sm:text-base">
-              Record released assistance transactions with beneficiary details and releasing officer
-              information.
+              Record released assistance transactions with beneficiary details
+              and releasing officer information.
             </p>
           </div>
         </section>
@@ -228,19 +234,27 @@ export default function ReleaseMonitoring() {
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="text-sm text-slate-500">Total Releases</p>
-            <p className="mt-1 text-2xl font-semibold text-slate-900">{summary.totalReleases}</p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">
+              {summary.totalReleases}
+            </p>
           </div>
           <div className="rounded-xl border border-teal-200 bg-teal-50 p-4 shadow-sm">
             <p className="text-sm text-teal-700">Released Amount</p>
-            <p className="mt-1 text-xl font-semibold text-teal-900">{money.format(summary.totalAmount)}</p>
+            <p className="mt-1 text-xl font-semibold text-teal-900">
+              {money.format(summary.totalAmount)}
+            </p>
           </div>
           <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 shadow-sm">
             <p className="text-sm text-indigo-700">Unique Beneficiaries</p>
-            <p className="mt-1 text-2xl font-semibold text-indigo-900">{summary.beneficiaries}</p>
+            <p className="mt-1 text-2xl font-semibold text-indigo-900">
+              {summary.beneficiaries}
+            </p>
           </div>
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
             <p className="text-sm text-amber-700">Releasing Officers</p>
-            <p className="mt-1 text-2xl font-semibold text-amber-900">{summary.officers}</p>
+            <p className="mt-1 text-2xl font-semibold text-amber-900">
+              {summary.officers}
+            </p>
           </div>
         </section>
 
@@ -250,12 +264,16 @@ export default function ReleaseMonitoring() {
               {editingId ? "Update Release Record" : "Record Release"}
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              Fill all required fields to log a release/distribution transaction.
+              Fill all required fields to log a release/distribution
+              transaction.
             </p>
 
             <form className="mt-5 space-y-4" onSubmit={onSubmit}>
               <div>
-                <label htmlFor="dateReleased" className="mb-1.5 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="dateReleased"
+                  className="mb-1.5 block text-sm font-medium text-slate-700"
+                >
                   Date Released
                 </label>
                 <input
@@ -264,14 +282,20 @@ export default function ReleaseMonitoring() {
                   type="date"
                   value={form.dateReleased}
                   onChange={(event) =>
-                    setForm((current) => ({ ...current, dateReleased: event.target.value }))
+                    setForm((current) => ({
+                      ...current,
+                      dateReleased: event.target.value,
+                    }))
                   }
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
                 />
               </div>
 
               <div>
-                <label htmlFor="assistanceType" className="mb-1.5 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="assistanceType"
+                  className="mb-1.5 block text-sm font-medium text-slate-700"
+                >
                   Assistance Type
                 </label>
                 <select
@@ -306,7 +330,10 @@ export default function ReleaseMonitoring() {
                   type="text"
                   value={form.beneficiaryName}
                   onChange={(event) =>
-                    setForm((current) => ({ ...current, beneficiaryName: event.target.value }))
+                    setForm((current) => ({
+                      ...current,
+                      beneficiaryName: event.target.value,
+                    }))
                   }
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
                   placeholder="e.g., Maria Santos"
@@ -327,7 +354,10 @@ export default function ReleaseMonitoring() {
                     type="text"
                     value={form.beneficiaryId}
                     onChange={(event) =>
-                      setForm((current) => ({ ...current, beneficiaryId: event.target.value }))
+                      setForm((current) => ({
+                        ...current,
+                        beneficiaryId: event.target.value,
+                      }))
                     }
                     className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
                     placeholder="e.g., BEN-210"
@@ -370,7 +400,10 @@ export default function ReleaseMonitoring() {
                   type="text"
                   value={form.releasingOfficer}
                   onChange={(event) =>
-                    setForm((current) => ({ ...current, releasingOfficer: event.target.value }))
+                    setForm((current) => ({
+                      ...current,
+                      releasingOfficer: event.target.value,
+                    }))
                   }
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
                   placeholder="e.g., Officer Carla Reyes"
@@ -378,7 +411,10 @@ export default function ReleaseMonitoring() {
               </div>
 
               <div>
-                <label htmlFor="amount" className="mb-1.5 block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="amount"
+                  className="mb-1.5 block text-sm font-medium text-slate-700"
+                >
                   Amount Released (PHP)
                 </label>
                 <input
@@ -388,7 +424,10 @@ export default function ReleaseMonitoring() {
                   type="number"
                   value={form.amount}
                   onChange={(event) =>
-                    setForm((current) => ({ ...current, amount: event.target.value }))
+                    setForm((current) => ({
+                      ...current,
+                      amount: event.target.value,
+                    }))
                   }
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
                   placeholder="e.g., 5000"
@@ -416,9 +455,12 @@ export default function ReleaseMonitoring() {
           </article>
 
           <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <h2 className="text-lg font-semibold text-slate-900">Release Records</h2>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Release Records
+            </h2>
             <p className="text-sm text-slate-600">
-              View release history by assistance type, beneficiary details, and releasing officer.
+              View release history by assistance type, beneficiary details, and
+              releasing officer.
             </p>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
@@ -432,7 +474,9 @@ export default function ReleaseMonitoring() {
               <select
                 value={assistanceFilter}
                 onChange={(event) =>
-                  setAssistanceFilter(event.target.value as AssistanceType | "All")
+                  setAssistanceFilter(
+                    event.target.value as AssistanceType | "All",
+                  )
                 }
                 className="rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none ring-teal-400 transition focus:border-teal-500 focus:ring"
               >
@@ -452,8 +496,12 @@ export default function ReleaseMonitoring() {
                     <th className="px-4 py-3 font-semibold">Release</th>
                     <th className="px-4 py-3 font-semibold">Date Released</th>
                     <th className="px-4 py-3 font-semibold">Assistance Type</th>
-                    <th className="px-4 py-3 font-semibold">Beneficiary Details</th>
-                    <th className="px-4 py-3 font-semibold">Releasing Officer</th>
+                    <th className="px-4 py-3 font-semibold">
+                      Beneficiary Details
+                    </th>
+                    <th className="px-4 py-3 font-semibold">
+                      Releasing Officer
+                    </th>
                     <th className="px-4 py-3 font-semibold">Amount</th>
                     <th className="px-4 py-3 font-semibold">Actions</th>
                   </tr>
@@ -461,7 +509,9 @@ export default function ReleaseMonitoring() {
                 <tbody className="divide-y divide-slate-100 bg-white text-slate-700">
                   {filteredRecords.map((item) => (
                     <tr key={item.id}>
-                      <td className="px-4 py-3 font-medium text-slate-900">{item.id}</td>
+                      <td className="px-4 py-3 font-medium text-slate-900">
+                        {item.id}
+                      </td>
                       <td className="px-4 py-3">{item.dateReleased}</td>
                       <td className="px-4 py-3">
                         <span className="inline-flex rounded-full bg-teal-100 px-2.5 py-1 text-xs font-medium text-teal-700">
@@ -469,9 +519,15 @@ export default function ReleaseMonitoring() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <p className="font-medium text-slate-900">{item.beneficiaryName}</p>
-                        <p className="text-xs text-slate-500">{item.beneficiaryId}</p>
-                        <p className="text-xs text-slate-500">{item.beneficiaryBarangay}</p>
+                        <p className="font-medium text-slate-900">
+                          {item.beneficiaryName}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {item.beneficiaryId}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {item.beneficiaryBarangay}
+                        </p>
                       </td>
                       <td className="px-4 py-3">{item.releasingOfficer}</td>
                       <td className="px-4 py-3">{money.format(item.amount)}</td>
@@ -500,7 +556,8 @@ export default function ReleaseMonitoring() {
 
               {filteredRecords.length === 0 && (
                 <div className="px-4 py-8 text-center text-sm text-slate-500">
-                  No release records match your search and assistance type filter.
+                  No release records match your search and assistance type
+                  filter.
                 </div>
               )}
             </div>
