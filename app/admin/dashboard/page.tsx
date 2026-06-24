@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 // Ensure you have configured your supabase client utility file
 import SignOutButton from "@/components/auth/sign-out-button";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 
 type ApplicationStatus = "Pending" | "Approved" | "Rejected" | "Released";
 
@@ -185,6 +186,15 @@ export default function AdminDashboard() {
     },
   ];
 
+  const quickLinks = [
+    { label: "Dashboard", href: "/admin/dashboard" },
+    { label: "Beneficiary", href: "/admin/beneficiary" },
+    { label: "Application", href: "/admin/applications" },
+    { label: "Program", href: "/admin/program" },
+    { label: "Release Monitoring", href: "/admin/release-monitoring" },
+    { label: "Reports", href: "/admin/reports" },
+  ];
+
   return (
     <main className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-10">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
@@ -226,7 +236,7 @@ export default function AdminDashboard() {
 
         {!isLoading && !error && (
           <>
-            <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <section className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {statCards.map((card) => (
                 <article
                   key={card.label}
@@ -246,80 +256,26 @@ export default function AdminDashboard() {
             </section>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold text-slate-900">
-                    Reports
-                  </h2>
-                  <p className="text-sm text-slate-600">
-                    Generate a report with beneficiary records, application
-                    status summary, and program utilization summary.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowReport((value) => !value)}
-                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
-                >
-                  {showReport ? "Hide Report" : "Generate Report"}
-                </button>
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Quick Links
+                </h2>
+                <p className="text-sm text-slate-600">
+                  Navigate quickly to the same routes available in the sidebar.
+                </p>
               </div>
 
-              {showReport && (
-                <div className="mt-5 grid gap-4 lg:grid-cols-3">
-                  <article className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      Beneficiary Records
-                    </h3>
-                    <p className="mt-1 text-xs text-slate-600">
-                      Distinct beneficiaries in the current filtered result.
-                    </p>
-                    <p className="mt-3 text-2xl font-semibold text-slate-900">
-                      {
-                        new Set(
-                          filteredRecords.map((record) => record.beneficiaryId),
-                        ).size
-                      }
-                    </p>
-                  </article>
-
-                  <article className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      Application Status Summary
-                    </h3>
-                    <ul className="mt-3 space-y-2 text-sm text-slate-700">
-                      {statusSummary.map((item) => (
-                        <li
-                          key={item.status}
-                          className="flex items-center justify-between"
-                        >
-                          <span>{item.status}</span>
-                          <span className="font-semibold">{item.count}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </article>
-
-                  <article className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      Program Utilization Summary
-                    </h3>
-                    <ul className="mt-3 space-y-2 text-sm text-slate-700">
-                      {programUtilization.map((item) => (
-                        <li key={item.program}>
-                          <p className="font-medium text-slate-900">
-                            {item.program}
-                          </p>
-                          <p className="text-xs text-slate-600">
-                            {item.applications} apps • Requested{" "}
-                            {currency.format(item.totalRequested)} • Released{" "}
-                          </p>
-                        </li>
-                      ))}
-                    </ul>
-                  </article>
-                </div>
-              )}
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {quickLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-cyan-400 hover:bg-cyan-50 hover:text-slate-900"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </section>
           </>
         )}
