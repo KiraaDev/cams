@@ -21,12 +21,6 @@ export default function Home() {
           >
             Sign In &rarr;
           </Link>
-          <Link
-            href="/auth/register"
-            className="text-sm font-semibold text-zinc-650 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition"
-          >
-            Sign Up &rarr;
-          </Link>
         </div>
       </header>
 
